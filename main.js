@@ -27,7 +27,7 @@ const rgbeLoader = new RGBELoader(manager); //Loader used to load our hdr
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
+//scene.add(axesHelper);
 renderer.shadowMap.enabled = true;
 
 // Lights
@@ -48,7 +48,7 @@ scene.add(light);
 // Cannon settings
 const world = new CANNON.World();
 const cannonDebugger = new CannonDebugger(scene, world, {})
-world.gravity.set(0, -9.82, 0); // Gravity in the negative Z direction
+world.gravity.set(0, -16, 0); // Gravity in the negative Z direction
 const groundBody = new CANNON.Body({
     mass: 0,
     material: new CANNON.Material()
@@ -63,6 +63,7 @@ quat.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
 groundBody.quaternion = quat;
 world.addBody(groundBody);
 const character = new Character(scene, world, camera, renderer);
+
 
 
 //Load HDRI
@@ -98,7 +99,7 @@ function animate(time) {
     if (started) {
 
         world.step(1 / 60);
-        cannonDebugger.update()
+        //cannonDebugger.update()
         character.update(deltaTime);
         renderer.render(scene, camera);
     }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export function lookAt(objectToRotate, targetPosition, delta) {
+export function lookAt(objectToRotate, targetPosition, delta, lockRotation) {
     targetPosition = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
     let direction = new THREE.Vector3();
     direction = targetPosition.sub(objectToRotate.position).normalize();
@@ -15,8 +15,11 @@ export function lookAt(objectToRotate, targetPosition, delta) {
     resultQuaternion.copy(quatA);
     resultQuaternion.slerp(quatB, delta * 7);
     const euler = new THREE.Euler().setFromQuaternion(resultQuaternion, "YXZ");
-    euler.x = 0;
-    euler.z = 0;
+    if (lockRotation) {
+        euler.x = 0;
+        euler.z = 0;
+    }
+
     return new THREE.Quaternion().setFromEuler(euler);
 }
 export function toRad(deg) {

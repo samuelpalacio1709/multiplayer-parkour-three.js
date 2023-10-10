@@ -18,7 +18,7 @@ export async function CreateEnvironmnet(object, textureLoader, scene, world) {
 
         //physics
         const collisionMaterial = new CANNON.Material()
-
+        collisionMaterial.friction = 0;
         const box_1 = new CANNON.Body({
             mass: 0, // kg
             position: new CANNON.Vec3(0, 1.5, 5), // m

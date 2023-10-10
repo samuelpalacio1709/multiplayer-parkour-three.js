@@ -32,7 +32,7 @@ export class Character {
         this.body = new CANNON.Body({
             mass: 1, // kg
             position: new CANNON.Vec3(0, 3, 0), // m
-            shape: new CANNON.Box(new CANNON.Vec3(0.5, 1, 0.9)),
+            shape: new CANNON.Box(new CANNON.Vec3(0.4, 1, 0.4)),
             material: new CANNON.Material() // Optional: set material properties
 
         });
@@ -44,9 +44,9 @@ export class Character {
         document.addEventListener('keydown', this.handleInputDown.bind(this));
         document.addEventListener('keyup', this.handleInputUp.bind(this));
 
-        const geometryDirection = new THREE.CapsuleGeometry(0.1, 0.1)
+        const geometryDirection = new THREE.SphereGeometry(0)
         const materialDirection = new THREE.MeshStandardMaterial();
-        materialDirection.color = new THREE.Color('red')
+        materialDirection.color = new THREE.Color('transparent')
 
         this.meshDirection = new THREE.Mesh(geometryDirection, materialDirection);
         this.scene.add(this.meshDirection)
@@ -60,8 +60,24 @@ export class Character {
         this.controls.enableDamping = true;
         this.controls.enablePan = false;
 
+        this.rightVector = new THREE.Vector3(0, 0, 0);
 
+        this.canJump = true;
+        this.groundCheck = new CANNON.Body({
+            mass: 1, // kg
+            position: new CANNON.Vec3(0, 0, 0), // m
+            shape: new CANNON.Sphere(0.1),
+            material: new CANNON.Material()
 
+        });
+        this.groundCheck.collisionResponse = 0;
+        this.groundCheck.addEventListener("collide", function (e) {
+            this.canJump = true;
+
+        }.bind(this));
+
+        this.world.addBody(this.groundCheck);
+        console.log(this.body)
 
     }
 
@@ -70,21 +86,38 @@ export class Character {
 
         const forwardVector = new THREE.Vector3();
         const cameraDirection = this.camera.getWorldDirection(forwardVector);
-        cameraDirection.x = forwardVector.x;
-        cameraDirection.z = forwardVector.z;
-        cameraDirection.y = this.getPosition().y;
 
+
+
+
+        // Create an "up" vector (assuming Y is the up direction)
+        var upVector = new THREE.Vector3(0, 1, 0);
+
+        // Calculate the right vector by taking the cross product
+
+        if (this.force.x === 0) {
+            this.rightVector = new THREE.Vector3();
+            this.rightVector.crossVectors(forwardVector, upVector);
+        }
 
         this.setForce(deltaTime);
-        this.body.velocity = new CANNON.Vec3(cameraDirection.x * this.force.z, this.body.velocity.y, cameraDirection.z * this.force.z)
+        this.body.velocity = new CANNON.Vec3(forwardVector.x * this.force.z + this.rightVector.x * -this.force.x,
+            this.body.velocity.y,
+            cameraDirection.z * this.force.z + this.rightVector.z * -this.force.x)
+
         this.mesh.position.copy(this.body.position);
         this.meshDirection.position.x = this.body.position.x + this.body.velocity.x
         this.meshDirection.position.z = this.body.position.z + this.body.velocity.z
         this.meshDirection.position.y = this.body.position.y
-        this.controls.target.copy(this.getPosition());
+
+
+
+        this.controls.target.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y + 1.5, this.getPosition().z));
         this.controls.update();
         this.updateCamera();
 
+        this.groundCheck.position.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y - 0.95, this.getPosition().z))
+        this.groundCheck.applyForce(new CANNON.Vec3(0, 16, 0))
     }
 
     handleInputDown(event) {
@@ -115,6 +148,9 @@ export class Character {
         if (this.keySet.has('d')) {
             this.force.x -= 1;
         }
+        if (this.keySet.has(' ')) {
+            this.jump();
+        }
 
         // You can normalize the vector if needed
         const length = Math.sqrt(this.force.z * this.force.z + this.force.x * this.force.x);
@@ -124,7 +160,7 @@ export class Character {
             this.force.z /= length;
             this.force.x *= this.maxSpeed;
             this.force.z *= this.maxSpeed;
-            this.body.quaternion.copy(lookAt(this.body, this.meshDirection.position, deltaTime));
+            this.body.quaternion.copy(lookAt(this.body, this.meshDirection.position, deltaTime, true));
 
         }
 
@@ -139,9 +175,18 @@ export class Character {
         this.controls.maxDistance = 4;
         this.controls.minDistance = 4;
 
-        this.camera.lookAt(new THREE.Vector3(this.getPosition().x, this.getPosition().y + 0.8, this.getPosition().z));
+        //this.camera.lookAt(new THREE.Vector3(this.getPosition().x, this.getPosition().y + 0.8, this.getPosition().z));
     }
 
+    jump() {
+
+        if (this.canJump) {
+            this.canJump = false;
+            console.log('Jump')
+            this.body.applyForce(new CANNON.Vec3(0, 500, 0))
+        }
+
+    }
 
 }
 

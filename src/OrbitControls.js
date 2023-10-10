@@ -51,8 +51,8 @@ class OrbitControls extends EventDispatcher {
 
         // How far you can orbit vertically, upper and lower limits.
         // Range is 0 to Math.PI radians.
-        this.minPolarAngle = 0; // radians
-        this.maxPolarAngle = Math.PI; // radians
+        this.minPolarAngle = Math.PI / 4; // radians
+        this.maxPolarAngle = Math.PI / 2; // radians
 
         // How far you can orbit horizontally, upper and lower limits.
         // If set, the interval [ min, max ] must be a sub-interval of [ - 2 PI, 2 PI ], with ( max - min < 2 PI )
@@ -972,7 +972,6 @@ class OrbitControls extends EventDispatcher {
         let first = false;
         function onPointerDown(event) {
             if (scope.enabled === false) return;
-            console.log(event)
 
             if (!first) {
 
@@ -1388,27 +1387,13 @@ class OrbitControls extends EventDispatcher {
 
         }
 
-        function test() {
-            console.log('Test');
-            scope.domElement.addEventListener('mousemove', mm, false);
-
-        }
-        function mm(event) {
-            const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
-            const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
-
-
-            console.log(movementX);
-        }
 
         scope.domElement.addEventListener('contextmenu', onContextMenu);
-
         scope.domElement.addEventListener('pointerdown', onPointerDown);
         scope.domElement.addEventListener('pointercancel', onPointerUp);
         scope.domElement.addEventListener('wheel', onMouseWheel, { passive: false });
 
 
-        this.domElement.ownerDocument.addEventListener('pointerlockchange', test);
         // force an update at start
 
         this.update();
