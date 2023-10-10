@@ -1,16 +1,18 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import { Character } from './src/character';
-import * as CANNON from 'cannon'
+import * as CANNON from 'cannon-es'
+import CannonDebugger from 'cannon-es-debugger'
+import { CreateEnvironmnet } from './src/environmnet';
+import { toRad } from './src/utility';
 
 // Scene
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
+let cameraDirection = new THREE.Vector3(0, 0, 0)
 
-let controls;
 
 let started = false;
 //Loader Manager
@@ -42,12 +44,10 @@ light.position.set(3, 10, 3);
 scene.add(light);
 
 // Camera initial values
-camera.position.z = 10;
-camera.position.y = 10;
-camera.rotateX(toRad(-45))
 
 // Cannon settings
 const world = new CANNON.World();
+const cannonDebugger = new CannonDebugger(scene, world, {})
 world.gravity.set(0, -9.82, 0); // Gravity in the negative Z direction
 const groundBody = new CANNON.Body({
     mass: 0,
@@ -62,12 +62,7 @@ const quat = new CANNON.Quaternion();
 quat.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
 groundBody.quaternion = quat;
 world.addBody(groundBody);
-
-
-
-
-
-const character = new Character(scene, world);
+const character = new Character(scene, world, camera, renderer);
 
 
 //Load HDRI
@@ -86,22 +81,7 @@ rgbeLoader.load('other/sky.hdr', texture => {
 
 fbxLoader.load('models/environment.fbx',
     async (object) => {
-
-        await textureLoader.load('textures/checker.jpg', (texture) => {
-
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-
-            const groundMaterial = new THREE.MeshStandardMaterial({ color: 'white', map: texture });
-
-            object.children[0].material = groundMaterial;
-            object.children[0].receiveShadow = true; // Enable shadow receiving
-            object.children[0].castShadow = true; // Enable shadow receiving
-            scene.add(object);
-        })
-        //scene.add(object)
-    },
-    (xhr) => {
+        CreateEnvironmnet(object, textureLoader, scene, world)
     },
     (error) => {
         console.log(error)
@@ -111,29 +91,25 @@ fbxLoader.load('models/environment.fbx',
 
 
 let lastTime;
-
-
 function animate(time) {
     requestAnimationFrame(animate);
-
+    const deltaTime = (time - lastTime) / 1000; // Convert milliseconds to seconds
+    lastTime = time;
     if (started) {
+
         world.step(1 / 60);
-        lastTime = time;
-        character.update();
-        controls.update();
+        cannonDebugger.update()
+        character.update(deltaTime);
         renderer.render(scene, camera);
     }
+
 
 }
 
 animate(0);
 
-function toRad(deg) {
-    return (deg * (Math.PI / 180))
-}
+
 function init() {
-    controls = new OrbitControls(camera, renderer.domElement)
-    controls.enableDamping = true;
     started = true;
     document.querySelector('.bg').style.display = 'none';
 }
@@ -148,3 +124,5 @@ manager.onProgress = function (item, loaded, total) {
         init();
     }
 };
+
+

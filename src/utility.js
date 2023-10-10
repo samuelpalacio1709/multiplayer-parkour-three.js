@@ -1,14 +1,24 @@
-export function clampSpeed(myVector, maxSpeed) {
+import * as THREE from 'three';
 
-    var length = Math.sqrt(myVector.x * myVector.x + myVector.y * myVector.y + myVector.z * myVector.z);
+export function lookAt(objectToRotate, targetPosition, delta) {
+    targetPosition = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
+    let direction = new THREE.Vector3();
+    direction = targetPosition.sub(objectToRotate.position).normalize();
 
-    if (length !== 0) {
-        myVector.x /= length;
-        myVector.z /= length;
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
 
-        myVector.x *= maxSpeed;
-        myVector.z *= maxSpeed;
+    const quatA = objectToRotate.quaternion.clone();
+    const quatB = quaternion;
 
-    }
-    return myVector;
+    const resultQuaternion = new THREE.Quaternion();
+    resultQuaternion.copy(quatA);
+    resultQuaternion.slerp(quatB, delta * 7);
+    const euler = new THREE.Euler().setFromQuaternion(resultQuaternion, "YXZ");
+    euler.x = 0;
+    euler.z = 0;
+    return new THREE.Quaternion().setFromEuler(euler);
+}
+export function toRad(deg) {
+    return (deg * (Math.PI / 180))
 }
