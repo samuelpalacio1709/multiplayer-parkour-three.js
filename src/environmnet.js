@@ -66,9 +66,5 @@ export async function CreateEnvironmnet(object, textureLoader, scene, world) {
         world.addBody(box_3);
         world.addBody(box_4);
         world.addBody(box_5);
-
-
     })
-    //scene.add(object)
-
 }

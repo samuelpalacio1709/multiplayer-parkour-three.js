@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import * as CANNON from 'cannon-es'
 import { lookAt } from './utility';
 import { OrbitControls } from './OrbitControls'
@@ -33,7 +32,7 @@ export class Character {
             mass: 1, // kg
             position: new CANNON.Vec3(0, 3, 0), // m
             shape: new CANNON.Box(new CANNON.Vec3(0.4, 1, 0.4)),
-            material: new CANNON.Material() // Optional: set material properties
+            material: new CANNON.Material()
 
         });
         this.body.fixedRotation = true;
@@ -51,8 +50,8 @@ export class Character {
         this.meshDirection = new THREE.Mesh(geometryDirection, materialDirection);
         this.scene.add(this.meshDirection)
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
-        this.controls.enableZoom = false; // Add this line to disable zooming
-        this.controls.target.copy(this.getPosition()); // Set the target of the controls to your character's position
+        this.controls.enableZoom = false;
+        this.controls.target.copy(this.getPosition());
         this.camera.position.set(this.getPosition().x,
             this.getPosition().y - 0.2,
             this.getPosition().z - 2.5);
@@ -88,14 +87,7 @@ export class Character {
         const forwardVector = new THREE.Vector3();
         const cameraDirection = this.camera.getWorldDirection(forwardVector);
 
-
-
-
-        // Create an "up" vector (assuming Y is the up direction)
-        var upVector = new THREE.Vector3(0, 1, 0);
-
-        // Calculate the right vector by taking the cross product
-
+        const upVector = new THREE.Vector3(0, 1, 0);
         this.rightVector = new THREE.Vector3();
         this.rightVector.crossVectors(forwardVector, upVector);
 
@@ -108,8 +100,6 @@ export class Character {
         this.meshDirection.position.x = this.body.position.x + this.body.velocity.x
         this.meshDirection.position.z = this.body.position.z + this.body.velocity.z
         this.meshDirection.position.y = this.body.position.y
-
-
 
         this.controls.target.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y + 1.5, this.getPosition().z));
         this.controls.update();
@@ -157,7 +147,6 @@ export class Character {
         }
 
 
-        // You can normalize the vector if needed
         const length = Math.sqrt(this.force.z * this.force.z + this.force.x * this.force.x);
 
         if (length !== 0) {
@@ -168,8 +157,6 @@ export class Character {
             this.body.quaternion.copy(lookAt(this.body, this.meshDirection.position, deltaTime, true));
 
         }
-
-
     }
 
     getPosition() {
@@ -179,10 +166,7 @@ export class Character {
 
         this.controls.maxDistance = 4;
         this.controls.minDistance = 4;
-
-        //this.camera.lookAt(new THREE.Vector3(this.getPosition().x, this.getPosition().y + 0.8, this.getPosition().z));
     }
-
     jump() {
 
         if (this.canJump && this.hasReleasedSpaceKey) {
@@ -190,8 +174,6 @@ export class Character {
             console.log('Jump')
             this.body.applyForce(new CANNON.Vec3(0, 500, 0))
         }
-
     }
-
 }
 

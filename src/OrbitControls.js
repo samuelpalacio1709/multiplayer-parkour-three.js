@@ -966,9 +966,7 @@ class OrbitControls extends EventDispatcher {
 
         }
 
-        //
-        // event handlers - FSM: listen for events and reset state
-        //
+
         let first = false;
         function onPointerDown(event) {
             if (scope.enabled === false) return;
@@ -980,11 +978,6 @@ class OrbitControls extends EventDispatcher {
                 first = true;
                 scope.domElement.setPointerCapture(event.pointerId);
                 scope.domElement.addEventListener('pointermove', onPointerMove);
-                //scope.domElement.addEventListener('pointerup', onPointerUp);
-
-
-
-                //
 
                 addPointer(event);
 
@@ -1006,11 +999,9 @@ class OrbitControls extends EventDispatcher {
                     container.requestPointerLock();
                 }
 
-
             }
 
         }
-
         function onPointerMove(event) {
             if (scope.enabled === false) return;
 
@@ -1021,9 +1012,7 @@ class OrbitControls extends EventDispatcher {
             } else {
 
                 onMouseMove(event);
-
             }
-
         }
 
         function onPointerUp(event) {
@@ -1033,14 +1022,12 @@ class OrbitControls extends EventDispatcher {
             if (pointers.length === 0) {
 
                 scope.domElement.releasePointerCapture(event.pointerId);
-
                 scope.domElement.removeEventListener('pointermove', onPointerMove);
                 scope.domElement.removeEventListener('pointerup', onPointerUp);
 
             }
 
             scope.dispatchEvent(_endEvent);
-
             state = STATE.NONE;
 
         }
@@ -1052,7 +1039,6 @@ class OrbitControls extends EventDispatcher {
             switch (event.button) {
 
                 case 0:
-
                     mouseAction = scope.mouseButtons.LEFT;
                     break;
 

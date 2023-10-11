@@ -5,16 +5,13 @@ import { Character } from './src/character';
 import * as CANNON from 'cannon-es'
 import CannonDebugger from 'cannon-es-debugger'
 import { CreateEnvironmnet } from './src/environmnet';
-import { toRad } from './src/utility';
 
 // Scene
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
-let cameraDirection = new THREE.Vector3(0, 0, 0)
-
-
 let started = false;
+
 //Loader Manager
 const manager = new THREE.LoadingManager();
 
@@ -23,11 +20,8 @@ const fbxLoader = new FBXLoader(manager);
 const textureLoader = new THREE.TextureLoader(manager);
 const rgbeLoader = new RGBELoader(manager); //Loader used to load our hdr
 
-
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-const axesHelper = new THREE.AxesHelper(5);
-//scene.add(axesHelper);
 renderer.shadowMap.enabled = true;
 
 // Lights
@@ -43,12 +37,11 @@ light.castShadow = true;
 light.position.set(3, 10, 3);
 scene.add(light);
 
-// Camera initial values
 
 // Cannon settings
 const world = new CANNON.World();
 const cannonDebugger = new CannonDebugger(scene, world, {})
-world.gravity.set(0, -16, 0); // Gravity in the negative Z direction
+world.gravity.set(0, -16, 0);
 const groundBody = new CANNON.Body({
     mass: 0,
     material: new CANNON.Material()
@@ -63,8 +56,6 @@ groundBody.quaternion = quat;
 world.addBody(groundBody);
 const character = new Character(scene, world, camera, renderer);
 
-
-
 //Load HDRI
 rgbeLoader.load('other/sky.hdr', texture => {
 
@@ -72,12 +63,10 @@ rgbeLoader.load('other/sky.hdr', texture => {
     const generator = new THREE.PMREMGenerator(renderer)
     const envMap = generator.fromEquirectangular(texture).texture;
 
-    //scene.environment= envMap; // Let affect the lighting 
     scene.background = envMap
     texture.dispose()
     generator.dispose()
 })
-
 
 fbxLoader.load('models/environment.fbx',
     async (object) => {
@@ -88,12 +77,10 @@ fbxLoader.load('models/environment.fbx',
     }
 )
 
-
-
 let lastTime;
 function animate(time) {
     requestAnimationFrame(animate);
-    const deltaTime = (time - lastTime) / 1000; // Convert milliseconds to seconds
+    const deltaTime = (time - lastTime) / 1000;
     lastTime = time;
     if (started) {
 
@@ -102,18 +89,14 @@ function animate(time) {
         character.update(deltaTime);
         renderer.render(scene, camera);
     }
-
-
 }
 
 animate(0);
-
 
 function init() {
     started = true;
     document.querySelector('.bg').style.display = 'none';
 }
-
 manager.onProgress = function (item, loaded, total) {
     const progress = (loaded / total) * 100;
     const bar = document.querySelector('.loading-percentage')
