@@ -57,7 +57,6 @@ const groundBody = new CANNON.Body({
 const groundShape = new CANNON.Plane();
 groundBody.addShape(groundShape);
 groundBody.material.friction = 0;
-console.log(groundBody.material);
 const quat = new CANNON.Quaternion();
 quat.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
 groundBody.quaternion = quat;
@@ -99,7 +98,7 @@ function animate(time) {
     if (started) {
 
         world.step(1 / 60);
-        //cannonDebugger.update()
+        cannonDebugger.update()
         character.update(deltaTime);
         renderer.render(scene, camera);
     }

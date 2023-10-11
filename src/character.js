@@ -78,6 +78,7 @@ export class Character {
 
         this.world.addBody(this.groundCheck);
         console.log(this.body)
+        this.hasReleasedSpaceKey = true;
 
     }
 
@@ -95,10 +96,8 @@ export class Character {
 
         // Calculate the right vector by taking the cross product
 
-        if (this.force.x === 0) {
-            this.rightVector = new THREE.Vector3();
-            this.rightVector.crossVectors(forwardVector, upVector);
-        }
+        this.rightVector = new THREE.Vector3();
+        this.rightVector.crossVectors(forwardVector, upVector);
 
         this.setForce(deltaTime);
         this.body.velocity = new CANNON.Vec3(forwardVector.x * this.force.z + this.rightVector.x * -this.force.x,
@@ -122,10 +121,18 @@ export class Character {
 
     handleInputDown(event) {
         this.keySet.add(event.key.toLowerCase())
+        if (this.keySet.has(' ')) {
+            this.jump();
+            this.hasReleasedSpaceKey = false;
+        }
     }
 
     handleInputUp(event) {
         this.keySet.delete(event.key.toLowerCase())
+        if (event.key === ' ') {
+            this.hasReleasedSpaceKey = true;
+        }
+
     }
 
     setForce(deltaTime) {
@@ -148,9 +155,7 @@ export class Character {
         if (this.keySet.has('d')) {
             this.force.x -= 1;
         }
-        if (this.keySet.has(' ')) {
-            this.jump();
-        }
+
 
         // You can normalize the vector if needed
         const length = Math.sqrt(this.force.z * this.force.z + this.force.x * this.force.x);
@@ -180,7 +185,7 @@ export class Character {
 
     jump() {
 
-        if (this.canJump) {
+        if (this.canJump && this.hasReleasedSpaceKey) {
             this.canJump = false;
             console.log('Jump')
             this.body.applyForce(new CANNON.Vec3(0, 500, 0))

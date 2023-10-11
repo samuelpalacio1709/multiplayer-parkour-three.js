@@ -62,7 +62,7 @@ class OrbitControls extends EventDispatcher {
         // Set to true to enable damping (inertia)
         // If damping is enabled, you must call controls.update() in your animation loop
         this.enableDamping = false;
-        this.dampingFactor = 0.05;
+        this.dampingFactor = 0.09;
 
         // This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
         // Set to false to disable zooming
@@ -671,7 +671,7 @@ class OrbitControls extends EventDispatcher {
             const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
             // Adjust the rotation speed by multiplying with a factor
-            const rotationSpeed = 0.005;
+            const rotationSpeed = 0.00125;
 
             rotateLeft(movementX * rotationSpeed);
             rotateUp(movementY * rotationSpeed);

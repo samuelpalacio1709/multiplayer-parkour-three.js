@@ -54,6 +54,13 @@ export async function CreateEnvironmnet(object, textureLoader, scene, world) {
             material: collisionMaterial
 
         });
+        const box_6 = new CANNON.Body({
+            mass: 50000, // kg
+            position: new CANNON.Vec3(6, 0.5, 10), // m
+            shape: new CANNON.Box(new CANNON.Vec3(1, 0.5, 3)),
+            material: collisionMaterial,
+        });
+
         world.addBody(box_1);
         world.addBody(box_2);
         world.addBody(box_3);
