@@ -2,36 +2,50 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es'
 import { lookAt } from './utility';
 import { OrbitControls } from './OrbitControls'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { gsap } from 'gsap';
 
 
 export class Character {
 
-    constructor(scene, world, camera, renderer) {
+    constructor(scene, world, camera, renderer, manager) {
         this.world = world;
         this.scene = scene;
         this.camera = camera;
         this.renderer = renderer;
+        this.states = {
+            Idle: 0,
+            Walking: 1,
+            Running: 2,
+            Jumping: 3
+        }
+        this.state = this.states.Idle;
+        this.manager = manager;
+        this.ready = false;
+        this.walkWeight = { value: 0 };
+        this.runWeight = { value: 0 };
+        this.idleWeight = { value: 0 };
+        this.jumpWeight = { value: 0 };
+        this.fadeAnimation(this.idleWeight, 1)
         this.init();
     }
 
-    init() {
-        console.log('Creating character')
-        //Mesh
-        const geometry = new THREE.CapsuleGeometry(0.5, 1, 24, 24)
-        const material = new THREE.MeshStandardMaterial();
-        material.color = new THREE.Color('blue')
-        this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.castShadow = true;
-        this.mesh.position.y = 3;
+    async init() {
+        let character = await this.loadCharacter();
+        this.loadAnimations(character)
+        this.mesh = character;
+        character.traverse(function (object) {
+            if (object.isMesh) object.castShadow = true;
+        });
         this.scene.add(this.mesh);
-        this.maxSpeed = 5;
+        this.maxSpeed = 3;
         this.force = new CANNON.Vec3(0, 0, 0)
 
         //Physics
         this.body = new CANNON.Body({
             mass: 1, // kg
-            position: new CANNON.Vec3(0, 3, 0), // m
-            shape: new CANNON.Box(new CANNON.Vec3(0.4, 1, 0.4)),
+            position: new CANNON.Vec3(0, 1, 0), // m
+            shape: new CANNON.Box(new CANNON.Vec3(0.2, 0.8, 0.2)),
             material: new CANNON.Material()
 
         });
@@ -71,6 +85,7 @@ export class Character {
         });
         this.groundCheck.collisionResponse = 0;
         this.groundCheck.addEventListener("collide", function (e) {
+            this.fadeAnimation(this.jumpWeight, 0)
             this.canJump = true;
 
         }.bind(this));
@@ -78,35 +93,45 @@ export class Character {
         this.world.addBody(this.groundCheck);
         console.log(this.body)
         this.hasReleasedSpaceKey = true;
+        this.ready = true;
 
     }
 
 
     update(deltaTime) {
+        if (this.ready) {
+            const forwardVector = new THREE.Vector3();
+            const cameraDirection = this.camera.getWorldDirection(forwardVector);
+            const upVector = new THREE.Vector3(0, 1, 0);
+            this.rightVector = new THREE.Vector3();
+            this.rightVector.crossVectors(forwardVector, upVector);
 
-        const forwardVector = new THREE.Vector3();
-        const cameraDirection = this.camera.getWorldDirection(forwardVector);
+            this.setForce(deltaTime);
+            this.body.velocity = new CANNON.Vec3(forwardVector.x * this.force.z + this.rightVector.x * -this.force.x,
+                this.body.velocity.y,
+                cameraDirection.z * this.force.z + this.rightVector.z * -this.force.x)
 
-        const upVector = new THREE.Vector3(0, 1, 0);
-        this.rightVector = new THREE.Vector3();
-        this.rightVector.crossVectors(forwardVector, upVector);
+            this.mesh.position.copy(new THREE.Vector3(this.body.position.x, this.body.position.y - 0.8, this.body.position.z));
 
-        this.setForce(deltaTime);
-        this.body.velocity = new CANNON.Vec3(forwardVector.x * this.force.z + this.rightVector.x * -this.force.x,
-            this.body.velocity.y,
-            cameraDirection.z * this.force.z + this.rightVector.z * -this.force.x)
+            this.meshDirection.position.x = this.body.position.x + this.body.velocity.x
+            this.meshDirection.position.z = this.body.position.z + this.body.velocity.z
+            this.meshDirection.position.y = this.body.position.y
 
-        this.mesh.position.copy(this.body.position);
-        this.meshDirection.position.x = this.body.position.x + this.body.velocity.x
-        this.meshDirection.position.z = this.body.position.z + this.body.velocity.z
-        this.meshDirection.position.y = this.body.position.y
+            this.controls.target.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y + 2, this.getPosition().z));
+            this.controls.update();
+            this.updateCamera();
 
-        this.controls.target.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y + 1.5, this.getPosition().z));
-        this.controls.update();
-        this.updateCamera();
+            this.groundCheck.position.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y, this.getPosition().z))
+            this.groundCheck.applyForce(new CANNON.Vec3(0, 16, 0))
 
-        this.groundCheck.position.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y - 0.95, this.getPosition().z))
-        this.groundCheck.applyForce(new CANNON.Vec3(0, 16, 0))
+            this.updateStateMachine();
+            this.checkState();
+
+            this.mixer.update(deltaTime);
+
+
+        }
+
     }
 
     handleInputDown(event) {
@@ -123,6 +148,74 @@ export class Character {
             this.hasReleasedSpaceKey = true;
         }
 
+    }
+
+    updateStateMachine() {
+        if (this.keySet.has('shift')) {
+
+            if (this.body.velocity.x != 0) {
+                this.state = this.states.Running;
+            }
+        }
+        else if (this.keySet.has('w') || this.keySet.has('s') || this.keySet.has('a') || this.keySet.has('d')) {
+            this.state = this.states.Walking;
+
+        }
+        else {
+
+            this.state = this.states.Idle;
+        }
+        console.log(this.body.velocity)
+
+    }
+
+    checkState() {
+        switch (this.state) {
+            case this.states.Idle:
+                {
+                    if (this.idleWeight.value === 0 && this.jumpWeight.value == 0) {
+                        this.fadeAnimation(this.idleWeight, 1)
+                        this.fadeAnimation(this.walkWeight, 0)
+                        this.fadeAnimation(this.runWeight, 0)
+                    }
+                    break;
+                }
+
+            case this.states.Walking:
+                {
+
+                    if (this.walkWeight.value === 0 && this.jumpWeight.value == 0) {
+                        this.fadeAnimation(this.idleWeight, 0)
+                        this.fadeAnimation(this.walkWeight, 1)
+                        this.fadeAnimation(this.runWeight, 0)
+                    }
+                    this.maxSpeed = 3;
+                    break;
+                }
+            case this.states.Running:
+                {
+                    if (this.runWeight.value === 0 && this.jumpWeight.value == 0) {
+                        this.fadeAnimation(this.idleWeight, 0)
+                        this.fadeAnimation(this.walkWeight, 0)
+                        this.fadeAnimation(this.runWeight, 1)
+                    }
+                    this.maxSpeed = 8;
+
+                    break;
+                }
+            case this.states.Jumping:
+                {
+
+                    console.log('Jump')
+                    break;
+                }
+            default: t
+        }
+
+        this.setWeight(this.idleAction, this.idleWeight.value);
+        this.setWeight(this.walkAction, this.walkWeight.value);
+        this.setWeight(this.runAction, this.runWeight.value);
+        this.setWeight(this.jumpAction, this.jumpWeight.value);
     }
 
     setForce(deltaTime) {
@@ -155,6 +248,7 @@ export class Character {
             this.force.x *= this.maxSpeed;
             this.force.z *= this.maxSpeed;
             this.body.quaternion.copy(lookAt(this.body, this.meshDirection.position, deltaTime, true));
+            this.mesh.quaternion.copy(lookAt(this.body, this.meshDirection.position, deltaTime, true));
 
         }
     }
@@ -164,16 +258,94 @@ export class Character {
     }
     updateCamera() {
 
-        this.controls.maxDistance = 4;
-        this.controls.minDistance = 4;
+        this.controls.maxDistance = 3.5;
+        this.controls.minDistance = 3;
     }
     jump() {
 
         if (this.canJump && this.hasReleasedSpaceKey) {
+            this.fadeAnimation(this.idleWeight, 0)
+            this.fadeAnimation(this.walkWeight, 0)
+            this.fadeAnimation(this.runWeight, 0)
+            this.fadeAnimation(this.jumpWeight, 1)
+            this.state = this.states.Jumping;
             this.canJump = false;
-            console.log('Jump')
             this.body.applyForce(new CANNON.Vec3(0, 500, 0))
         }
     }
+    async loadCharacter() {
+
+        return new Promise((resolve, reject) => {
+
+            const loader = new GLTFLoader(this.manager);
+            loader.load('models/character.glb',
+                // called when the resource is loaded
+                function (glb) {
+
+                    glb.scene.animations = glb.animations;
+                    resolve((glb.scene));
+
+
+
+                }.bind(this),
+                // called while loading is progressing
+                function (xhr) {
+
+                },
+                // called when loading has errors
+                function (error) {
+
+                    console.log('An error happened');
+
+                }
+            );
+
+        });
+
+    }
+    loadAnimations(model) {
+        const animations = model.animations;
+        this.mixer = new THREE.AnimationMixer(model);
+        this.idleAction = this.mixer.clipAction(animations[0]);
+        this.jumpAction = this.mixer.clipAction(animations[1]);
+        this.runAction = this.mixer.clipAction(animations[2]);
+        this.walkAction = this.mixer.clipAction(animations[3]);
+        this.actions = [this.idleAction, this.walkAction, this.runAction, this.jumpAction];
+        this.setWeight(this.idleAction, 0);
+        this.setWeight(this.walkAction, 0);
+        this.setWeight(this.runAction, 0);
+        this.setWeight(this.jumpAction, 0);
+
+
+
+        this.actions.forEach(function (action) {
+
+            action.play();
+
+        });
+    }
+    setWeight(action, weight) {
+
+        action.enabled = true;
+        action.setEffectiveTimeScale(1);
+        action.setEffectiveWeight(weight);
+
+    }
+    fadeAnimation(subject, value) {
+
+
+        // Create a timeline to handle the animation.
+        gsap.to(subject, {
+            duration: 0.2, // Animation duration in seconds (0 to 1)
+            value,    // The end value (1 in this case)
+            ease: "linear",
+            onUpdate: () => {
+
+            },
+
+        });
+    }
+
 }
+
 

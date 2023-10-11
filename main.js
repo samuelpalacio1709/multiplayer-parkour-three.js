@@ -8,10 +8,10 @@ import { CreateEnvironmnet } from './src/environmnet';
 
 // Scene
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
 let started = false;
-
+scene.fog = new THREE.Fog(0xa0a0a0, 10, 20);
 //Loader Manager
 const manager = new THREE.LoadingManager();
 
@@ -54,7 +54,7 @@ const quat = new CANNON.Quaternion();
 quat.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
 groundBody.quaternion = quat;
 world.addBody(groundBody);
-const character = new Character(scene, world, camera, renderer);
+const character = new Character(scene, world, camera, renderer, manager);
 
 //Load HDRI
 rgbeLoader.load('other/sky.hdr', texture => {
@@ -85,7 +85,7 @@ function animate(time) {
     if (started) {
 
         world.step(1 / 60);
-        cannonDebugger.update()
+        //cannonDebugger.update()
         character.update(deltaTime);
         renderer.render(scene, camera);
     }
