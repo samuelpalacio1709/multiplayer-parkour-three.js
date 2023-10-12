@@ -41,7 +41,7 @@ scene.add(light);
 // Cannon settings
 const world = new CANNON.World();
 const cannonDebugger = new CannonDebugger(scene, world, {})
-world.gravity.set(0, -16, 0);
+world.gravity.set(0, -20, 0);
 const groundBody = new CANNON.Body({
     mass: 0,
     material: new CANNON.Material()

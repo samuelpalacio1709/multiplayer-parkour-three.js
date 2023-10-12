@@ -85,6 +85,7 @@ export class Character {
         });
         this.groundCheck.collisionResponse = 0;
         this.groundCheck.addEventListener("collide", function (e) {
+
             this.fadeAnimation(this.jumpWeight, 0)
             this.canJump = true;
 
@@ -122,7 +123,7 @@ export class Character {
             this.updateCamera();
 
             this.groundCheck.position.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y, this.getPosition().z))
-            this.groundCheck.applyForce(new CANNON.Vec3(0, 16, 0))
+            this.groundCheck.applyForce(new CANNON.Vec3(0, 20, 0))
 
             this.updateStateMachine();
             this.checkState();
@@ -173,7 +174,7 @@ export class Character {
         switch (this.state) {
             case this.states.Idle:
                 {
-                    if (this.idleWeight.value === 0 && this.jumpWeight.value == 0) {
+                    if (this.idleWeight.value === 0) {
                         this.fadeAnimation(this.idleWeight, 1)
                         this.fadeAnimation(this.walkWeight, 0)
                         this.fadeAnimation(this.runWeight, 0)
@@ -184,7 +185,7 @@ export class Character {
             case this.states.Walking:
                 {
 
-                    if (this.walkWeight.value === 0 && this.jumpWeight.value == 0) {
+                    if (this.walkWeight.value === 0) {
                         this.fadeAnimation(this.idleWeight, 0)
                         this.fadeAnimation(this.walkWeight, 1)
                         this.fadeAnimation(this.runWeight, 0)
@@ -194,7 +195,7 @@ export class Character {
                 }
             case this.states.Running:
                 {
-                    if (this.runWeight.value === 0 && this.jumpWeight.value == 0) {
+                    if (this.runWeight.value === 0) {
                         this.fadeAnimation(this.idleWeight, 0)
                         this.fadeAnimation(this.walkWeight, 0)
                         this.fadeAnimation(this.runWeight, 1)
@@ -206,7 +207,6 @@ export class Character {
             case this.states.Jumping:
                 {
 
-                    console.log('Jump')
                     break;
                 }
             default: t
@@ -264,13 +264,22 @@ export class Character {
     jump() {
 
         if (this.canJump && this.hasReleasedSpaceKey) {
+
+            this.jumpAction.setEffectiveTimeScale(4)
             this.fadeAnimation(this.idleWeight, 0)
             this.fadeAnimation(this.walkWeight, 0)
             this.fadeAnimation(this.runWeight, 0)
             this.fadeAnimation(this.jumpWeight, 1)
+            this.jumpAction.reset();
+            this.jumpAction.repetitions = 1;
             this.state = this.states.Jumping;
             this.canJump = false;
-            this.body.applyForce(new CANNON.Vec3(0, 500, 0))
+            setTimeout(function () {
+                this.fadeAnimation(this.idleWeight, 0)
+                this.fadeAnimation(this.walkWeight, 0)
+                this.fadeAnimation(this.runWeight, 0)
+                this.body.applyForce(new CANNON.Vec3(0, 450, 0));
+            }.bind(this), 150); //Time before execution
         }
     }
     async loadCharacter() {
@@ -281,7 +290,7 @@ export class Character {
             loader.load('models/character.glb',
                 // called when the resource is loaded
                 function (glb) {
-
+                    console.log(glb)
                     glb.scene.animations = glb.animations;
                     resolve((glb.scene));
 
@@ -321,13 +330,13 @@ export class Character {
         this.actions.forEach(function (action) {
 
             action.play();
+            action.setEffectiveTimeScale(1);
 
         });
     }
     setWeight(action, weight) {
 
         action.enabled = true;
-        action.setEffectiveTimeScale(1);
         action.setEffectiveWeight(weight);
 
     }
