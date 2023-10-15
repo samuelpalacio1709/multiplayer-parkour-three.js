@@ -5,10 +5,12 @@ import { Character } from './src/character';
 import * as CANNON from 'cannon-es'
 import CannonDebugger from 'cannon-es-debugger'
 import { CreateEnvironmnet } from './src/environmnet';
-
+import { degToRad } from 'three/src/math/MathUtils';
 // Scene
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.y = 5;
+camera.rotateX(degToRad(90));
 const renderer = new THREE.WebGLRenderer();
 let started = false;
 scene.fog = new THREE.Fog(0xa0a0a0, 10, 20);
@@ -54,8 +56,8 @@ const quat = new CANNON.Quaternion();
 quat.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
 groundBody.quaternion = quat;
 world.addBody(groundBody);
-const character = new Character(scene, world, camera, renderer, manager);
-
+let character = null;
+//new Character(scene, world, camera, renderer, manager);
 //Load HDRI
 rgbeLoader.load('other/sky.hdr', texture => {
 
@@ -86,7 +88,8 @@ function animate(time) {
 
         world.step(1 / 60);
         //cannonDebugger.update()
-        character.update(deltaTime);
+        character?.update(deltaTime);
+
         renderer.render(scene, camera);
     }
 }
@@ -108,4 +111,20 @@ manager.onProgress = function (item, loaded, total) {
     }
 };
 
+document.querySelector('#btn-public-room').addEventListener('click', joinPublicRoom)
+function joinPublicRoom() {
+    document.querySelector('.main').classList.add('hide')
+    character = new Character(scene, world, camera, renderer, manager);
+}
 
+window.addEventListener('resize', onWindowResize, false);
+
+function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    character?.resize();
+
+}

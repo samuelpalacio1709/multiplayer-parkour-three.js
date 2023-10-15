@@ -30,7 +30,7 @@ class OrbitControls extends EventDispatcher {
     constructor(object, domElement) {
 
         super();
-
+        this.isLocked = false;
         this.object = object;
         this.domElement = domElement;
         this.domElement.style.touchAction = 'none'; // disable touch scroll
@@ -418,7 +418,6 @@ class OrbitControls extends EventDispatcher {
 
             }
 
-            //scope.dispatchEvent( { type: 'dispose' } ); // should this be added here?
 
         };
 
@@ -665,6 +664,10 @@ class OrbitControls extends EventDispatcher {
         }
 
         function handleMouseMoveRotate(event) {
+
+            if (document.pointerLockElement === null) {
+                return;
+            }
             rotateEnd.set(event.clientX, event.clientY);
 
             const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
@@ -967,15 +970,10 @@ class OrbitControls extends EventDispatcher {
         }
 
 
-        let first = false;
         function onPointerDown(event) {
             if (scope.enabled === false) return;
+            if (document.pointerLockElement === null) {
 
-            if (!first) {
-
-
-
-                first = true;
                 scope.domElement.setPointerCapture(event.pointerId);
                 scope.domElement.addEventListener('pointermove', onPointerMove);
 
@@ -1379,8 +1377,12 @@ class OrbitControls extends EventDispatcher {
         scope.domElement.addEventListener('pointercancel', onPointerUp);
         scope.domElement.addEventListener('wheel', onMouseWheel, { passive: false });
 
+        var myEvent = new PointerEvent('pointerdown', {
+            pointerId: GetPointerID()
+        });
+        scope.domElement.dispatchEvent(myEvent);
 
-        // force an update at start
+
 
         this.update();
 
@@ -1388,6 +1390,14 @@ class OrbitControls extends EventDispatcher {
 
     }
 
+}
+
+function GetPointerID() {
+    if (navigator.userAgent.indexOf("Firefox") != -1) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 export { OrbitControls };

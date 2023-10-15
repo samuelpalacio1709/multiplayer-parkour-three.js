@@ -4,6 +4,7 @@ import { lookAt } from './utility';
 import { OrbitControls } from './OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { gsap } from 'gsap';
+import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
 
 export class Character {
@@ -26,7 +27,7 @@ export class Character {
         this.runWeight = { value: 0 };
         this.idleWeight = { value: 0 };
         this.jumpWeight = { value: 0 };
-        this.fadeAnimation(this.idleWeight, 1)
+        this.fadeAnimation(this.idleWeight, 1);
         this.init();
     }
 
@@ -92,9 +93,10 @@ export class Character {
         }.bind(this));
 
         this.world.addBody(this.groundCheck);
-        console.log(this.body)
         this.hasReleasedSpaceKey = true;
         this.ready = true;
+        this.cssRenderer = this.createCSSRenderer()
+        this.nameLabel = this.createLabel();
 
     }
 
@@ -125,17 +127,23 @@ export class Character {
             this.groundCheck.position.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y, this.getPosition().z))
             this.groundCheck.applyForce(new CANNON.Vec3(0, 20, 0))
 
+
             this.updateStateMachine();
             this.checkState();
 
             this.mixer.update(deltaTime);
-
+            this.nameLabel.position.set(this.getPosition().x, this.getPosition().y + 1.7, this.getPosition().z)
+            this.cssRenderer.render(this.scene, this.camera);
 
         }
 
     }
 
     handleInputDown(event) {
+        if (document.pointerLockElement === null) {
+            this.state = this.states.Idle;
+            return;
+        }
         this.keySet.add(event.key.toLowerCase())
         if (this.keySet.has(' ')) {
             this.jump();
@@ -144,6 +152,8 @@ export class Character {
     }
 
     handleInputUp(event) {
+
+
         this.keySet.delete(event.key.toLowerCase())
         if (event.key === ' ') {
             this.hasReleasedSpaceKey = true;
@@ -152,6 +162,12 @@ export class Character {
     }
 
     updateStateMachine() {
+
+        if (document.pointerLockElement === null) {
+            this.state = this.states.Idle;
+            return;
+        }
+
         if (this.keySet.has('shift')) {
 
             if (this.body.velocity.x != 0) {
@@ -166,7 +182,6 @@ export class Character {
 
             this.state = this.states.Idle;
         }
-        console.log(this.body.velocity)
 
     }
 
@@ -221,6 +236,10 @@ export class Character {
     setForce(deltaTime) {
         this.force.z = 0;
         this.force.x = 0;
+        if (document.pointerLockElement === null) {
+            this.state = this.states.Idle;
+            return;
+        }
 
         if (this.keySet.has('w')) {
             this.force.z += 1;
@@ -290,7 +309,6 @@ export class Character {
             loader.load('models/character.glb',
                 // called when the resource is loaded
                 function (glb) {
-                    console.log(glb)
                     glb.scene.animations = glb.animations;
                     resolve((glb.scene));
 
@@ -355,6 +373,33 @@ export class Character {
         });
     }
 
+    createCSSRenderer() {
+        const labelRender = new CSS2DRenderer();
+        labelRender.setSize(window.innerWidth, window.innerHeight);
+        labelRender.domElement.style.position = 'absolute'
+        labelRender.domElement.style.top = '0px';
+        labelRender.domElement.style.pointerEvents = 'none'
+        document.body.appendChild(labelRender.domElement)
+        return labelRender;
+    }
+    resize() {
+        this.cssRenderer?.setSize(window.innerWidth, window.innerHeight);
+        console.log('Resizing')
+    }
+    createLabel() {
+        const p = document.createElement('h5');
+        const name = document.querySelector('#name').value;
+        if (name) {
+            p.textContent = name;
+        }
+        else {
+            p.textContent = 'Random';
+
+        }
+        const nameLabel = new CSS2DObject(p);
+        this.scene.add(nameLabel)
+        return nameLabel;
+    }
 }
 
 
