@@ -5,7 +5,7 @@ let players = new Map();
 let scene = null;
 export function connectToServer(game) {
     scene = game.scene;
-    socket = io('localhost:3000/parkourgame', { transports: ['websocket'] });
+    socket = io('https://server-parkour.onrender.com/parkourgame', { transports: ['websocket'] });
     socket.on('connect', () => {
         console.log('Connected as...', socket.id)
         socket.emit('ready', {})
