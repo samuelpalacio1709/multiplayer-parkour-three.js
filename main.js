@@ -5,6 +5,7 @@ import { Character } from './src/character';
 import * as CANNON from 'cannon-es'
 import CannonDebugger from 'cannon-es-debugger'
 import { CreateEnvironmnet } from './src/environmnet';
+import { updateCharacters } from './src/network';
 import { degToRad } from 'three/src/math/MathUtils';
 // Scene
 const scene = new THREE.Scene();
@@ -89,7 +90,7 @@ function animate(time) {
         world.step(1 / 60);
         //cannonDebugger.update()
         character?.update(deltaTime);
-
+        updateCharacters(deltaTime);
         renderer.render(scene, camera);
     }
 }

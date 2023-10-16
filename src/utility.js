@@ -25,3 +25,6 @@ export function lookAt(objectToRotate, targetPosition, delta, lockRotation) {
 export function toRad(deg) {
     return (deg * (Math.PI / 180))
 }
+export function lerp(a, b, t) {
+    return (1 - t) * a + t * b;
+}

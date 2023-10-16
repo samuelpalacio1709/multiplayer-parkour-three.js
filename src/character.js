@@ -5,7 +5,7 @@ import { OrbitControls } from './OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { gsap } from 'gsap';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-
+import { connectToServer, syncPlayerInfo } from './network';
 
 export class Character {
 
@@ -32,6 +32,8 @@ export class Character {
     }
 
     async init() {
+
+        connectToServer({ scene: this.scene });
         let character = await this.loadCharacter();
         this.loadAnimations(character)
         this.mesh = character;
@@ -97,6 +99,9 @@ export class Character {
         this.ready = true;
         this.cssRenderer = this.createCSSRenderer()
         this.nameLabel = this.createLabel();
+        setInterval(() => { syncPlayerInfo(this) }, 100)
+
+
 
     }
 
@@ -134,7 +139,6 @@ export class Character {
             this.mixer.update(deltaTime);
             this.nameLabel.position.set(this.getPosition().x, this.getPosition().y + 1.7, this.getPosition().z)
             this.cssRenderer.render(this.scene, this.camera);
-
         }
 
     }
@@ -172,6 +176,10 @@ export class Character {
 
             if (this.body.velocity.x != 0) {
                 this.state = this.states.Running;
+            }
+            else if (this.body.velocity.x <= 0) {
+                this.state = this.states.Idle;
+
             }
         }
         else if (this.keySet.has('w') || this.keySet.has('s') || this.keySet.has('a') || this.keySet.has('d')) {
@@ -275,6 +283,9 @@ export class Character {
     getPosition() {
         return this.mesh.position;
     }
+    getRotation() {
+        return this.mesh.quaternion;
+    }
     updateCamera() {
 
         this.controls.maxDistance = 3.5;
@@ -343,8 +354,6 @@ export class Character {
         this.setWeight(this.runAction, 0);
         this.setWeight(this.jumpAction, 0);
 
-
-
         this.actions.forEach(function (action) {
 
             action.play();
@@ -389,6 +398,7 @@ export class Character {
     createLabel() {
         const p = document.createElement('h5');
         const name = document.querySelector('#name').value;
+        this.playerName = name;
         if (name) {
             p.textContent = name;
         }

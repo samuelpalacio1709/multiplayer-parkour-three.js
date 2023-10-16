@@ -35,6 +35,13 @@ h5 {
     font-size: 15px;
 }
 
+h6 {
+    font-family: 'Baloo Chettan 2';
+    font-weight: bold;
+    color: var(--brown);
+    font-size: 14px;
+}
+
 @media only screen and (max-width: 550px) {
 
     h1 {
