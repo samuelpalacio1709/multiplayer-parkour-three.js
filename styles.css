@@ -153,3 +153,21 @@ input {
     width: 1000px;
     height: 1000px;
 }
+
+.messages {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+}
+
+.messages p {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    color: var(--brown);
+    font-size: 24px;
+    background-color: var(--main-color);
+    padding: 15px;
+    border-radius: 17px;
+}

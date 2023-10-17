@@ -3,19 +3,29 @@ import { characterSync } from "./characterSync";
 let socket = null;
 let players = new Map();
 let scene = null;
+const URL = 'https://server-parkour.onrender.com' //https://server-parkour.onrender.com'
 export function connectToServer(game) {
     scene = game.scene;
-    socket = io('https://server-parkour.onrender.com/parkourgame', { transports: ['websocket'] });
-    socket.on('connect', () => {
-        console.log('Connected as...', socket.id)
-        socket.emit('ready', {})
-        socket.on('playerMove', (playerInfo) => {
-            syncCharacter(playerInfo)
+    document.querySelector('#messages').classList.remove('hide')
+    fetch('https://server-parkour.onrender.com/init').then((response) => response.json())
+        .then(function (data) {
+            if (data.status === 'active') {
+                socket = io(URL + '/parkourgame', { transports: ['websocket'] });
+                socket.on('connect', () => {
+                    console.log('Connected as...', socket.id)
+                    document.querySelector('#messages').classList.add('hide')
+                    socket.emit('ready', {})
+                    socket.on('playerMove', (playerInfo) => {
+                        syncCharacter(playerInfo)
+                    })
+                })
+                socket.on('playerleft', (id) => {
+                    removePlayer(id);
+                })
+            }
+
         })
-    })
-    socket.on('playerleft', (id) => {
-        removePlayer(id);
-    })
+
 
 }
 
