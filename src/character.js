@@ -322,7 +322,7 @@ export class Character {
                 function (glb) {
                     glb.scene.animations = glb.animations;
                     resolve((glb.scene));
-
+                    console.log(gbl)
 
 
                 }.bind(this),

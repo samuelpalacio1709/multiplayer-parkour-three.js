@@ -3,11 +3,11 @@ import { characterSync } from "./characterSync";
 let socket = null;
 let players = new Map();
 let scene = null;
-const URL = 'https://server-parkour.onrender.com' //https://server-parkour.onrender.com'
+const URL = 'server-parkour.onrender.com' //https://server-parkour.onrender.com'
 export function connectToServer(game) {
     scene = game.scene;
     document.querySelector('#messages').classList.remove('hide')
-    fetch('https://server-parkour.onrender.com/init').then((response) => response.json())
+    fetch('https://' + URL + '/init').then((response) => response.json())
         .then(function (data) {
             if (data.status === 'active') {
                 socket = io(URL + '/parkourgame', { transports: ['websocket'] });
@@ -55,13 +55,14 @@ export function syncPlayerInfo(character) {
 }
 
 function syncCharacter(playerInfo) {
-    if (!players.has(playerInfo.id)) {
+    if (!players.has(playerInfo.id) && playerInfo.id !== undefined) {
+        console.log('Player With id to be synced' + playerInfo.id)
         players.set(playerInfo.id, new characterSync(scene, playerInfo))
     }
     const player = players.get(playerInfo.id);
-    player.syncPosition(playerInfo.position);
-    player.syncRotation(playerInfo.rotation);
-    player.syncAnimation(playerInfo.animationsWeights)
+    player?.syncPosition(playerInfo.position);
+    player?.syncRotation(playerInfo.rotation);
+    player?.syncAnimation(playerInfo.animationsWeights)
 
 }
 
