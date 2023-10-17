@@ -3,11 +3,11 @@ import { characterSync } from "./characterSync";
 let socket = null;
 let players = new Map();
 let scene = null;
-const URL = 'localhost:3000' //https://server-parkour.onrender.com'
+const URL = 'server-parkour.onrender.com' //https://server-parkour.onrender.com'
 export function connectToServer(game) {
     scene = game.scene;
     document.querySelector('#messages').classList.remove('hide')
-    fetch('http://' + URL + '/init').then((response) => response.json())
+    fetch('https://' + URL + '/init').then((response) => response.json())
         .then(function (data) {
             if (data.status === 'active') {
                 socket = io(URL + '/parkourgame', { transports: ['websocket'] });
