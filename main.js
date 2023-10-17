@@ -7,7 +7,11 @@ import CannonDebugger from 'cannon-es-debugger'
 import { CreateEnvironmnet } from './src/environmnet';
 import { updateCharacters } from './src/network';
 import { degToRad } from 'three/src/math/MathUtils';
+import { initCharacterSelector } from './src/character-selector';
 // Scene
+
+initCharacterSelector();
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.y = 5;

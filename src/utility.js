@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+const loader = new GLTFLoader();
 export function lookAt(objectToRotate, targetPosition, delta, lockRotation) {
     targetPosition = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
     let direction = new THREE.Vector3();
@@ -27,4 +28,20 @@ export function toRad(deg) {
 }
 export function lerp(a, b, t) {
     return (1 - t) * a + t * b;
+}
+export function easeOutCubic(x) {
+    return 1 - Math.pow(1 - x, 3);
+}
+
+export async function loadModel(path) {
+    return new Promise((resolve, reject) => {
+        loader.load('models/' + path,
+            function (glb) {
+                console.log(glb)
+                resolve((glb))
+            }
+        );
+
+    });
+
 }

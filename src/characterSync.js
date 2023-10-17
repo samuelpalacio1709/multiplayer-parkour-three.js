@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { lerp } from './utility';
+import { lerp, easeOutCubic, loadModel } from './utility';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
 export class characterSync {
@@ -20,6 +19,7 @@ export class characterSync {
         this.runWeight = 0;
         this.idleWeight = 0;
         this.jumpWeight = 0;
+        this.characterType = playerInfo.characterType;
         this.createLabel(playerInfo.playerName)
         this.init();
 
@@ -27,7 +27,7 @@ export class characterSync {
     async init() {
         this.mesh = null;
         let character = await this.loadCharacter();
-        //this.loadAnimations(character)
+        this.loadAnimations(character)
         this.mesh = character;
         character.traverse(function (object) {
             if (object.isMesh) object.castShadow = true;
@@ -57,12 +57,12 @@ export class characterSync {
         this.updatePosition(deltaTime);
         this.updateRotation(deltaTime);
         this.updateAnimations(deltaTime);
-        this.nameLabel?.position.set(this.mesh.position.x, this.mesh.position.y + 1.7, this.mesh.position.z)
+        this.nameLabel?.position.set(this.mesh.position.x, this.mesh.position.y + 2, this.mesh.position.z)
 
     }
 
     updatePosition(deltaTime) {
-        const t = Math.min(1, deltaTime * this.SmoothingDelay);
+        const t = Math.min(1, easeOutCubic(deltaTime * this.SmoothingDelay));
         const interpolatedPosition = new THREE.Vector3().lerpVectors(this.mesh.position, this.position, t);
         this.mesh.position.copy(interpolatedPosition);
     }
@@ -78,8 +78,8 @@ export class characterSync {
         this.setWeight(this.walkAction, lerp(this.walkAction.weight, this.walkWeight, t));
         this.setWeight(this.runAction, lerp(this.runAction.weight, this.runWeight, t));
         this.setWeight(this.jumpAction, lerp(this.jumpAction.weight, this.jumpWeight, t));
-        this.mixer?.update(deltaTime);
 
+        this.mixer?.update(deltaTime);
     }
 
     loadAnimations(model) {
@@ -97,31 +97,25 @@ export class characterSync {
 
         this.actions.forEach(function (action) {
             action.play();
-            action.setEffectiveTimeScale(1);
+            action.setEffectiveTimeScale(1.3);
         });
     }
     async loadCharacter() {
 
-        return new Promise((resolve, reject) => {
+        const mainGbl = await loadModel(this.characterType + '.glb')
+        const walkAnimation = await loadModel('walking.glb')
+        const runAnimation = await loadModel('running.glb')
+        const jumpAnimation = await loadModel('falling.glb')
+        const idleAnimation = await loadModel('idle.glb')
+        const character = mainGbl.scene;
 
-            const loader = new GLTFLoader(this.manager);
-            loader.load('models/character.glb',
-                // called when the resource is loaded
-                function (glb) {
-                    glb.scene.animations = glb.animations;
-                    resolve((glb.scene));
-                }.bind(this),
-                // called while loading is progressing
-                function (xhr) {
+        character.animations =
+            [idleAnimation.animations[0],
+            jumpAnimation.animations[0],
+            runAnimation.animations[0],
+            walkAnimation.animations[0]]
+        return character;
 
-                },
-                // called when loading has errors
-                function (error) {
-                    console.log('An error happened');
-                }
-            );
-
-        });
 
     }
     setWeight(action, weight) {
@@ -144,4 +138,13 @@ export class characterSync {
         this.scene.add(nameLabel)
         this.nameLabel = nameLabel;
     }
+    remove() {
+        this.scene?.remove(this.mesh);
+        this.scene?.remove(this.nameLabel);
+
+        this.loader = null;
+        this.mesh = null;
+    }
+
+
 }

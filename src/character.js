@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es'
-import { lookAt } from './utility';
+import { lookAt, loadModel } from './utility';
 import { OrbitControls } from './OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { gsap } from 'gsap';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { connectToServer, syncPlayerInfo } from './network';
+import { getCharacter } from './character-selector';
 
 export class Character {
 
@@ -33,7 +34,11 @@ export class Character {
 
     async init() {
 
-        connectToServer({ scene: this.scene });
+        connectToServer({
+            scene: this.scene,
+            character: this
+        });
+        this.characterType = getCharacter();
         let character = await this.loadCharacter();
         this.loadAnimations(character)
         this.mesh = character;
@@ -137,7 +142,7 @@ export class Character {
             this.checkState();
 
             this.mixer.update(deltaTime);
-            this.nameLabel.position.set(this.getPosition().x, this.getPosition().y + 1.7, this.getPosition().z)
+            this.nameLabel.position.set(this.getPosition().x, this.getPosition().y + 2, this.getPosition().z)
             this.cssRenderer.render(this.scene, this.camera);
         }
 
@@ -295,7 +300,7 @@ export class Character {
 
         if (this.canJump && this.hasReleasedSpaceKey) {
 
-            this.jumpAction.setEffectiveTimeScale(4)
+            this.jumpAction.setEffectiveTimeScale(1);
             this.fadeAnimation(this.idleWeight, 0)
             this.fadeAnimation(this.walkWeight, 0)
             this.fadeAnimation(this.runWeight, 0)
@@ -313,32 +318,18 @@ export class Character {
         }
     }
     async loadCharacter() {
-
-        return new Promise((resolve, reject) => {
-
-            const loader = new GLTFLoader(this.manager);
-            loader.load('models/character.glb',
-                // called when the resource is loaded
-                function (glb) {
-                    glb.scene.animations = glb.animations;
-                    resolve((glb.scene));
-                    console.log(gbl)
-
-
-                }.bind(this),
-                // called while loading is progressing
-                function (xhr) {
-
-                },
-                // called when loading has errors
-                function (error) {
-
-                    console.log('An error happened');
-
-                }
-            );
-
-        });
+        const mainGbl = await loadModel(this.characterType + '.glb')
+        const walkAnimation = await loadModel('walking.glb')
+        const runAnimation = await loadModel('running.glb')
+        const jumpAnimation = await loadModel('jump.glb')
+        const idleAnimation = await loadModel('idle.glb')
+        const character = mainGbl.scene;
+        character.animations =
+            [idleAnimation.animations[0],
+            jumpAnimation.animations[0],
+            runAnimation.animations[0],
+            walkAnimation.animations[0]]
+        return character;
 
     }
     loadAnimations(model) {

@@ -3,11 +3,11 @@ import { characterSync } from "./characterSync";
 let socket = null;
 let players = new Map();
 let scene = null;
-const URL = 'server-parkour.onrender.com' //https://server-parkour.onrender.com'
+const URL = 'localhost:3000' //https://server-parkour.onrender.com'
 export function connectToServer(game) {
     scene = game.scene;
     document.querySelector('#messages').classList.remove('hide')
-    fetch('https://' + URL + '/init').then((response) => response.json())
+    fetch('http://' + URL + '/init').then((response) => response.json())
         .then(function (data) {
             if (data.status === 'active') {
                 socket = io(URL + '/parkourgame', { transports: ['websocket'] });
@@ -50,7 +50,8 @@ export function syncPlayerInfo(character) {
             runWeight: character.runWeight.value,
             jumpWeight: character.jumpWeight.value
         },
-        playerName: character.playerName
+        playerName: character.playerName,
+        characterType: character.characterType
     })
 }
 
@@ -69,12 +70,7 @@ function syncCharacter(playerInfo) {
 function removePlayer(playerId) {
     if (players?.has(playerId)) {
         const PLAYER = players.get(playerId);
-        scene?.remove(PLAYER.mesh);
-        PLAYER.mesh.geometry.dispose();
-        if (PLAYER.mesh.material.map) {
-            PLAYER.mesh.material.map.dispose();
-        }
-        PLAYER.mesh = null;
+        PLAYER.remove();
         players.delete(playerId)
     }
     console.log('Player wi id ' + playerId + ' Left the game')
