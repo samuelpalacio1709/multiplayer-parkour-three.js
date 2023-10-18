@@ -3,7 +3,7 @@ import { characterSync } from "./characterSync";
 let socket = null;
 let players = new Map();
 let scene = null;
-const URL = 'server-parkour.onrender.com' //https://server-parkour.onrender.com'
+const URL = 'parkour.azurewebsites.net' //https://server-parkour.onrender.com'https:///init
 export function connectToServer(game) {
     scene = game.scene;
     document.querySelector('#messages').classList.remove('hide')
