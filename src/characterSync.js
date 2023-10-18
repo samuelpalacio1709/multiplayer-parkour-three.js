@@ -145,6 +145,9 @@ export class characterSync {
         this.loader = null;
         this.mesh = null;
     }
+    getPosition() {
+        return this.mesh?.position;
+    }
 
 
 }

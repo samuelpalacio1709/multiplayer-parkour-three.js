@@ -8,6 +8,8 @@ import { CreateEnvironmnet } from './src/environmnet';
 import { updateCharacters } from './src/network';
 import { degToRad } from 'three/src/math/MathUtils';
 import { initCharacterSelector } from './src/character-selector';
+import { connectToServer } from './src/network';
+
 // Scene
 
 initCharacterSelector();
@@ -118,8 +120,57 @@ manager.onProgress = function (item, loaded, total) {
 
 document.querySelector('#btn-public-room').addEventListener('click', joinPublicRoom)
 function joinPublicRoom() {
+    setUp({
+        scene,
+        publicRoom: true,
+        customRoom: ''
+    })
+}
+document.querySelector('#btn-create-private-room').addEventListener('click', createPrivateRoom)
+
+function createPrivateRoom() {
+    setUp({
+        scene,
+        publicRoom: false,
+        customRoom: ''
+    })
+}
+document.querySelector('#btn-join-private-room').addEventListener('click', joinPrivateRoom)
+
+
+function joinPrivateRoom() {
+    const roomId = document.querySelector('#room-id').value
+    document.querySelector('#room-id').classList.add('wrong')
+
+    if (roomId.length <= 5 || !Number(roomId)) {
+
+        return;
+    }
+    setUp({
+        scene,
+        publicRoom: false,
+        customRoom: roomId
+    })
+    document.querySelector('#private').classList.add('hide')
+
+}
+
+document.querySelector('#btn-private-room').addEventListener('click', showJoinOptions)
+document.querySelector('#cancel-join').addEventListener('click', hideJoinOptions)
+
+function showJoinOptions() {
+    document.querySelector('#private').classList.remove('hide')
+    document.querySelector('#room-id').classList.remove('wrong')
+}
+function hideJoinOptions() {
+    document.querySelector('#private').classList.add('hide')
+}
+
+function setUp(options) {
     document.querySelector('.main').classList.add('hide')
     character = new Character(scene, world, camera, renderer, manager);
+    options.character = character;
+    connectToServer(options);
 }
 
 window.addEventListener('resize', onWindowResize, false);

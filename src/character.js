@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es'
-import { lookAt, loadModel } from './utility';
+import { lookAt, loadModel, generateRandomRoomString } from './utility';
 import { OrbitControls } from './OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { gsap } from 'gsap';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import { connectToServer, syncPlayerInfo } from './network';
+import { syncPlayerInfo } from './network';
 import { getCharacter } from './character-selector';
 
 export class Character {
@@ -34,10 +34,7 @@ export class Character {
 
     async init() {
 
-        connectToServer({
-            scene: this.scene,
-            character: this
-        });
+
         this.characterType = getCharacter();
         let character = await this.loadCharacter();
         this.loadAnimations(character)
@@ -87,11 +84,12 @@ export class Character {
         this.groundCheck = new CANNON.Body({
             mass: 1, // kg
             position: new CANNON.Vec3(0, 0, 0), // m
-            shape: new CANNON.Sphere(0.1),
+            shape: new CANNON.Sphere(0.11),
             material: new CANNON.Material()
 
         });
         this.groundCheck.collisionResponse = 0;
+
         this.groundCheck.addEventListener("collide", function (e) {
 
             this.fadeAnimation(this.jumpWeight, 0)
@@ -237,7 +235,11 @@ export class Character {
 
                     break;
                 }
-            default: t
+            default:
+                {
+                    this.fadeAnimation(this.idleWeight, 1)
+                    break;
+                }
         }
 
         this.setWeight(this.idleAction, this.idleWeight.value);
@@ -313,7 +315,7 @@ export class Character {
                 this.fadeAnimation(this.idleWeight, 0)
                 this.fadeAnimation(this.walkWeight, 0)
                 this.fadeAnimation(this.runWeight, 0)
-                this.body.applyForce(new CANNON.Vec3(0, 450, 0));
+                this.body.applyForce(new CANNON.Vec3(0, 480, 0));
             }.bind(this), 150); //Time before execution
         }
     }
@@ -394,7 +396,8 @@ export class Character {
             p.textContent = name;
         }
         else {
-            p.textContent = 'Random';
+            this.playerName = 'User' + generateRandomRoomString();
+            p.textContent = this.playerName;
 
         }
         const nameLabel = new CSS2DObject(p);

@@ -5,8 +5,8 @@
 	<meta charset="utf-8">
 	<title>Character Controller</title>
 	
-  <script type="module" crossorigin src="/assets/index-2cb66780.js"></script>
-  <link rel="stylesheet" href="/assets/index-cdc4c61a.css">
+  <script type="module" crossorigin src="/assets/index-c0da54c7.js"></script>
+  <link rel="stylesheet" href="/assets/index-a0df32ca.css">
 </head>
 
 <body>
@@ -41,17 +41,39 @@
 				<button id="btn-public-room">
 					<p>Join public room</p>
 				</button>
-				<button>
+				<button id="btn-private-room">
+					<p>Join private room</p>
+				</button>
+				<button id="btn-create-private-room">
 					<p>Create private room</p>
 				</button>
 			</div>
+			<div class="private hide" id="private">
+				<div class="options-private">
+					<input type="text" id="room-id" placeholder="Enter room id" maxlength="6">
+					<button id="btn-join-private-room">
+						<p>Join</p>
+					</button>
+					<div class="cancel-join" id="cancel-join">
+						<p style="color:white;font-size: 14px;">X</p>
+					</div>
+				</div>
 
+			</div>
 		</div>
 	</div>
 	<div class="messages hide" id="messages">
 		<p>Connecting to the server...</p>
 	</div>
+	<div class="messages hide" id="rooms">
+		<p id="roomid">Room: 000000</p>
+	</div>
 
+	<div class="messages hide" id="players">
+		<div class="players-list" id="players-list">
+
+		</div>
+	</div>
 
 	
 </body>

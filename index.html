@@ -39,17 +39,39 @@
 				<button id="btn-public-room">
 					<p>Join public room</p>
 				</button>
-				<button>
+				<button id="btn-private-room">
+					<p>Join private room</p>
+				</button>
+				<button id="btn-create-private-room">
 					<p>Create private room</p>
 				</button>
 			</div>
+			<div class="private hide" id="private">
+				<div class="options-private">
+					<input type="text" id="room-id" placeholder="Enter room id" maxlength="6">
+					<button id="btn-join-private-room">
+						<p>Join</p>
+					</button>
+					<div class="cancel-join" id="cancel-join">
+						<p style="color:white;font-size: 14px;">X</p>
+					</div>
+				</div>
 
+			</div>
 		</div>
 	</div>
 	<div class="messages hide" id="messages">
 		<p>Connecting to the server...</p>
 	</div>
+	<div class="messages hide" id="rooms">
+		<p id="roomid">Room: 000000</p>
+	</div>
 
+	<div class="messages hide" id="players">
+		<div class="players-list" id="players-list">
+
+		</div>
+	</div>
 
 	<script type="module" src="/main.js"></script>
 </body>
