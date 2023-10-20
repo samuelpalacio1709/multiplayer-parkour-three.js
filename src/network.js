@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 import { characterSync } from "./characterSync";
 import { generateRandomRoomString } from './utility';
-
+import * as THREE from 'three'
 let socket = null;
 let players = new Map();
 let scene = null;
@@ -62,10 +62,10 @@ export function syncPlayerInfo(character) {
             z: character.getRotation().z
         },
         animationsWeights: {
-            idleWeight: character.idleWeight.value,
-            walkWeight: character.walkWeight.value,
-            runWeight: character.runWeight.value,
-            jumpWeight: character.jumpWeight.value
+            idleWeight: character.idleAction.weightValue.value,
+            walkWeight: character.walkAction.weightValue.value,
+            runWeight: character.runAction.weightValue.value,
+            jumpWeight: character.jumpAction.weightValue.value
         },
         playerName: character.playerName,
         characterType: character.characterType
@@ -98,9 +98,8 @@ function removePlayer(playerId) {
         allPlayers.delete(playerId)
     }
 
-    console.log(allPlayers)
     console.log('Player wi id ' + playerId + ' Left the game')
-    console.log(players)
+
 }
 
 export function updateCharacters(deltaTime) {
@@ -113,8 +112,8 @@ export function updateCharacters(deltaTime) {
 
 function showPlayerList() {
     const playersList = Array.from(allPlayers);
-    playersList.sort((x, y) => (x[1].getPosition().y) < (y[1].getPosition().y) ? 1 : -1)
-    console.log(playersList);
+    const point = new THREE.Vector3(0, 0, 0)
+    playersList.sort((x, y) => (x[1].getPosition().distanceTo(point)) < (y[1].getPosition().distanceTo(point)) ? 1 : -1)
     document.querySelector('#players-list').innerHTML =
         playersList.map(function (player, index) {
 
@@ -123,7 +122,7 @@ function showPlayerList() {
                     <div class="player-info">
                         <span class='yellow'>${index + 1}</span>
                         <span class='yellow'>${player[1].playerName}</span>
-                        <span class='yellow'>${Math.floor(player[1].getPosition().y + 0.15)} m</span>
+                        <span class='yellow'>${Math.floor(player[1].getPosition().distanceTo(point) + 0.15)} m</span>
                     </div>`
             }
             else {
@@ -131,7 +130,7 @@ function showPlayerList() {
                     <div class="player-info">
                         <span>${index + 1}</span>
                         <span>${player[1].playerName}</span>
-                        <span>${Math.floor(player[1].getPosition().y + 0.15)} m</span>
+                        <span>${Math.floor(player[1].getPosition().distanceTo(point) + 0.15)} m</span>
                     </div>`
             }
 

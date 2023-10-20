@@ -37,7 +37,6 @@ export async function loadModel(path) {
     return new Promise((resolve, reject) => {
         loader.load('models/' + path,
             function (glb) {
-                console.log(glb)
                 resolve((glb))
             }
         );
@@ -50,4 +49,8 @@ export function generateRandomRoomString() {
     const max = 999999;
     const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
     return randomNumber.toString();
+}
+
+export function clamp(number, min, max) {
+    return Math.max(min, Math.min(number, max));
 }

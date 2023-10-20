@@ -2,8 +2,6 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es'
 import { lookAt, loadModel, generateRandomRoomString } from './utility';
 import { OrbitControls } from './OrbitControls'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { gsap } from 'gsap';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { syncPlayerInfo } from './network';
 import { getCharacter } from './character-selector';
@@ -21,18 +19,13 @@ export class Character {
             Running: 2,
             Jumping: 3
         }
-        this.state = this.states.Idle;
         this.manager = manager;
         this.ready = false;
-        this.walkWeight = { value: 0 };
-        this.runWeight = { value: 0 };
-        this.idleWeight = { value: 0 };
-        this.jumpWeight = { value: 0 };
-        this.fadeAnimation(this.idleWeight, 1);
         this.init();
     }
 
     async init() {
+
 
 
         this.characterType = getCharacter();
@@ -42,6 +35,8 @@ export class Character {
         character.traverse(function (object) {
             if (object.isMesh) object.castShadow = true;
         });
+        this.currentAction = null;
+        this.setState(this.states.Idle);
         this.scene.add(this.mesh);
         this.maxSpeed = 3;
         this.force = new CANNON.Vec3(0, 0, 0)
@@ -49,14 +44,14 @@ export class Character {
         //Physics
         this.body = new CANNON.Body({
             mass: 1, // kg
-            position: new CANNON.Vec3(0, 1, 0), // m
-            shape: new CANNON.Box(new CANNON.Vec3(0.2, 0.8, 0.2)),
-            material: new CANNON.Material()
+            position: new CANNON.Vec3(0, 3, 0), // m
+            shape: new CANNON.Cylinder(0.2, 0.2, 1.8),
+            material: this.world.defaultMaterial
 
         });
+        this.isPlayer = true;
         this.body.fixedRotation = true;
         this.body.updateMassProperties();
-        this.body.material.friction = 0;
         this.world.addBody(this.body);
         this.keySet = new Set();
         document.addEventListener('keydown', this.handleInputDown.bind(this));
@@ -82,20 +77,36 @@ export class Character {
 
         this.canJump = true;
         this.groundCheck = new CANNON.Body({
-            mass: 1, // kg
+            mass: 0.00001, // kg
             position: new CANNON.Vec3(0, 0, 0), // m
-            shape: new CANNON.Sphere(0.11),
-            material: new CANNON.Material()
+            shape: new CANNON.Cylinder(0.2, 0.2, 0.2),
+            material: new CANNON.Material(),
+            collisionFilterMask: 2
+
 
         });
         this.groundCheck.collisionResponse = 0;
+        this.contactNormal = new CANNON.Vec3()
+        this.upAxis = new CANNON.Vec3(0, 1, 0)
+        this.body.addEventListener("collide", function (e) {
+            const contactNormal = e.contact.ni;
+            const tolerance = 0.98;
+            if (contactNormal.y > tolerance &&
+                Math.abs(contactNormal.x) == 0 &&
+                Math.abs(contactNormal.z == 0)) {
 
-        this.groundCheck.addEventListener("collide", function (e) {
+                if (this.canJump) return
+                this.jumpAction.weightValue.value = 0;
+                setTimeout(function () {
+                    this.jumpAction.fadeOut(0.2);;
+                }.bind(this), 10)
+                this.canJump = true;
 
-            this.fadeAnimation(this.jumpWeight, 0)
-            this.canJump = true;
+                this.setState(this.states.Idle);
+            }
 
         }.bind(this));
+
 
         this.world.addBody(this.groundCheck);
         this.hasReleasedSpaceKey = true;
@@ -104,6 +115,7 @@ export class Character {
         this.nameLabel = this.createLabel();
         setInterval(() => { syncPlayerInfo(this) }, 100)
 
+        this.raycaster = new THREE.Raycaster();
 
 
     }
@@ -111,6 +123,7 @@ export class Character {
 
     update(deltaTime) {
         if (this.ready) {
+
             const forwardVector = new THREE.Vector3();
             const cameraDirection = this.camera.getWorldDirection(forwardVector);
             const upVector = new THREE.Vector3(0, 1, 0);
@@ -122,7 +135,7 @@ export class Character {
                 this.body.velocity.y,
                 cameraDirection.z * this.force.z + this.rightVector.z * -this.force.x)
 
-            this.mesh.position.copy(new THREE.Vector3(this.body.position.x, this.body.position.y - 0.8, this.body.position.z));
+            this.mesh.position.copy(new THREE.Vector3(this.body.position.x, this.body.position.y - 0.9, this.body.position.z));
 
             this.meshDirection.position.x = this.body.position.x + this.body.velocity.x
             this.meshDirection.position.z = this.body.position.z + this.body.velocity.z
@@ -132,23 +145,35 @@ export class Character {
             this.controls.update();
             this.updateCamera();
 
-            this.groundCheck.position.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y, this.getPosition().z))
-            this.groundCheck.applyForce(new CANNON.Vec3(0, 20, 0))
+            this.groundCheck.position.copy(new THREE.Vector3(this.body.position.x, this.body.position.y - 0.89, this.body.position.z))
 
 
             this.updateStateMachine();
-            this.checkState();
 
             this.mixer.update(deltaTime);
             this.nameLabel.position.set(this.getPosition().x, this.getPosition().y + 2, this.getPosition().z)
             this.cssRenderer.render(this.scene, this.camera);
+            if (this.body.position.y < -40) {
+                this.body.position = new CANNON.Vec3(0, 4, 0)
+                this.body.velocity = new CANNON.Vec3(0, 0, 0)
+            }
+            if ((this.body.position.y.toFixed(9) === this.body.previousPosition.y.toFixed(9))) {
+                if (this.jumpAction.weightValue.value > 0) {
+                    this.jumpAction.weightValue.value = 0;
+
+                }
+            }
+            console.log(this.runAction)
+
         }
+
+
 
     }
 
     handleInputDown(event) {
         if (document.pointerLockElement === null) {
-            this.state = this.states.Idle;
+            this.setState(this.states.Idle)
             return;
         }
         this.keySet.add(event.key.toLowerCase())
@@ -171,88 +196,78 @@ export class Character {
     updateStateMachine() {
 
         if (document.pointerLockElement === null) {
-            this.state = this.states.Idle;
+            this.setState(this.states.Idle)
             return;
         }
 
         if (this.keySet.has('shift')) {
 
             if (this.body.velocity.x != 0) {
-                this.state = this.states.Running;
+                this.setState(this.states.Running)
+
             }
             else if (this.body.velocity.x <= 0) {
-                this.state = this.states.Idle;
+                this.setState(this.states.Idle)
 
             }
         }
         else if (this.keySet.has('w') || this.keySet.has('s') || this.keySet.has('a') || this.keySet.has('d')) {
-            this.state = this.states.Walking;
-
+            this.setState(this.states.Walking)
         }
         else {
 
-            this.state = this.states.Idle;
+            this.setState(this.states.Idle)
         }
-
     }
 
-    checkState() {
+    performState() {
         switch (this.state) {
             case this.states.Idle:
                 {
-                    if (this.idleWeight.value === 0) {
-                        this.fadeAnimation(this.idleWeight, 1)
-                        this.fadeAnimation(this.walkWeight, 0)
-                        this.fadeAnimation(this.runWeight, 0)
-                    }
+
+                    this.fadeAnimation(this.idleAction)
                     break;
                 }
 
             case this.states.Walking:
                 {
-
-                    if (this.walkWeight.value === 0) {
-                        this.fadeAnimation(this.idleWeight, 0)
-                        this.fadeAnimation(this.walkWeight, 1)
-                        this.fadeAnimation(this.runWeight, 0)
-                    }
+                    this.fadeAnimation(this.walkAction)
                     this.maxSpeed = 3;
                     break;
                 }
             case this.states.Running:
                 {
-                    if (this.runWeight.value === 0) {
-                        this.fadeAnimation(this.idleWeight, 0)
-                        this.fadeAnimation(this.walkWeight, 0)
-                        this.fadeAnimation(this.runWeight, 1)
-                    }
+                    this.fadeAnimation(this.runAction)
                     this.maxSpeed = 8;
-
                     break;
                 }
             case this.states.Jumping:
                 {
+                    console.log('Fading action');
+                    this.jumpAction.weightValue.value = 1;
+                    this.jumpAction
+                        .reset()
+                        .setEffectiveTimeScale(1)
+                        .setEffectiveWeight(1)
+                        .fadeIn(0.3)
+                        .play();
+                    break;
+                }
 
-                    break;
-                }
-            default:
-                {
-                    this.fadeAnimation(this.idleWeight, 1)
-                    break;
-                }
         }
-
-        this.setWeight(this.idleAction, this.idleWeight.value);
-        this.setWeight(this.walkAction, this.walkWeight.value);
-        this.setWeight(this.runAction, this.runWeight.value);
-        this.setWeight(this.jumpAction, this.jumpWeight.value);
+    }
+    setState(state) {
+        if (this.state !== state) {
+            this.state = state;
+            this.performState();
+        }
     }
 
     setForce(deltaTime) {
         this.force.z = 0;
         this.force.x = 0;
         if (document.pointerLockElement === null) {
-            this.state = this.states.Idle;
+            this.setState(this.states.Idle)
             return;
         }
 
@@ -299,24 +314,20 @@ export class Character {
         this.controls.minDistance = 3;
     }
     jump() {
-
+        if (Math.abs(this.body.position.y - this.body.previousPosition.y) > 0.09) {
+            return;
+        }
         if (this.canJump && this.hasReleasedSpaceKey) {
 
-            this.jumpAction.setEffectiveTimeScale(1);
-            this.fadeAnimation(this.idleWeight, 0)
-            this.fadeAnimation(this.walkWeight, 0)
-            this.fadeAnimation(this.runWeight, 0)
-            this.fadeAnimation(this.jumpWeight, 1)
-            this.jumpAction.reset();
-            this.jumpAction.repetitions = 1;
-            this.state = this.states.Jumping;
+            // this.jumpAction.setEffectiveTimeScale(1.3);
+            // this.jumpAction.reset();
+            // this.jumpAction.repetitions = 1;
             this.canJump = false;
+            this.body.velocity.y = 1.5
             setTimeout(function () {
-                this.fadeAnimation(this.idleWeight, 0)
-                this.fadeAnimation(this.walkWeight, 0)
-                this.fadeAnimation(this.runWeight, 0)
                 this.body.applyForce(new CANNON.Vec3(0, 480, 0));
-            }.bind(this), 150); //Time before execution
+            }.bind(this), 100)
+            this.setState(this.states.Jumping)
         }
     }
     async loadCharacter() {
@@ -341,38 +352,48 @@ export class Character {
         this.jumpAction = this.mixer.clipAction(animations[1]);
         this.runAction = this.mixer.clipAction(animations[2]);
         this.walkAction = this.mixer.clipAction(animations[3]);
+
+        this.idleAction.weightValue = { value: 1 };
+        this.jumpAction.weightValue = { value: 0 };
+        this.runAction.weightValue = { value: 0 };
+        this.walkAction.weightValue = { value: 0 };
+
         this.actions = [this.idleAction, this.walkAction, this.runAction, this.jumpAction];
-        this.setWeight(this.idleAction, 0);
-        this.setWeight(this.walkAction, 0);
-        this.setWeight(this.runAction, 0);
-        this.setWeight(this.jumpAction, 0);
-
         this.actions.forEach(function (action) {
-
             action.play();
             action.setEffectiveTimeScale(1);
-
+            action.enabled = true;
+            action.setEffectiveWeight(1)
+            action.fadeOut(0.1)
         });
     }
-    setWeight(action, weight) {
 
-        action.enabled = true;
-        action.setEffectiveWeight(weight);
-
-    }
-    fadeAnimation(subject, value) {
+    fadeAnimation(action) {
 
 
-        // Create a timeline to handle the animation.
-        gsap.to(subject, {
-            duration: 0.2, // Animation duration in seconds (0 to 1)
-            value,    // The end value (1 in this case)
-            ease: "linear",
-            onUpdate: () => {
+        if (!this.currentAction) {
+            action.fadeIn(0.3)
+            this.currentAction = action;
+            action.weightValue.value = 1;
 
-            },
+            return;
+        }
 
-        });
+        if (this.currentAction != action) {
+            this.currentAction.fadeOut(0.3)
+            action.weightValue.value = 1;
+            this.currentAction.weightValue.value = 0;
+
+            action
+                .reset()
+                .setEffectiveTimeScale(1)
+                .setEffectiveWeight(1)
+                .fadeIn(0.3)
+                .play();
+        }
+        this.currentAction = action
+
+
     }
 
     createCSSRenderer() {

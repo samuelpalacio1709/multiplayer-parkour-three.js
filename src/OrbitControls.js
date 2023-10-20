@@ -10,6 +10,7 @@ import {
     Ray,
     MathUtils
 } from 'three';
+import { clamp } from './utility';
 
 // OrbitControls performs orbiting, dollying (zooming), and panning.
 // Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
@@ -62,7 +63,7 @@ class OrbitControls extends EventDispatcher {
         // Set to true to enable damping (inertia)
         // If damping is enabled, you must call controls.update() in your animation loop
         this.enableDamping = false;
-        this.dampingFactor = 0.09;
+        this.dampingFactor = 0.15;
 
         // This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
         // Set to false to disable zooming
@@ -673,11 +674,11 @@ class OrbitControls extends EventDispatcher {
             const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
             const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-            // Adjust the rotation speed by multiplying with a factor
-            const rotationSpeed = 0.00125;
 
-            rotateLeft(movementX * rotationSpeed);
-            rotateUp(movementY * rotationSpeed);
+            // Adjust the rotation speed by multiplying with a factor
+            const rotationSpeed = 0.008;
+            rotateLeft(clamp(movementX, -10, 10) * rotationSpeed);
+            rotateUp(clamp(movementY, -10, 10) * rotationSpeed);
 
             rotateStart.copy(rotateEnd);
 
