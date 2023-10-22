@@ -21,7 +21,7 @@ camera.position.y = 5;
 camera.rotateX(degToRad(90));
 const renderer = new THREE.WebGLRenderer();
 let started = false;
-//scene.fog = new THREE.Fog(0xa0a0a0, 10, 20);
+scene.fog = new THREE.Fog(0xa0a0a0, 20, 50);
 //Loader Manager
 const manager = new THREE.LoadingManager();
 

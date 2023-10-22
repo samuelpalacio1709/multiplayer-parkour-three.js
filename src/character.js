@@ -3,7 +3,7 @@ import * as CANNON from 'cannon-es'
 import { lookAt, loadModel, generateRandomRoomString } from './utility';
 import { OrbitControls } from './OrbitControls'
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import { syncPlayerInfo } from './network';
+import { syncPlayerInfo, syncWinnner } from './network';
 import { getCharacter } from './character-selector';
 
 export class Character {
@@ -76,19 +76,14 @@ export class Character {
         this.rightVector = new THREE.Vector3(0, 0, 0);
 
         this.canJump = true;
-        this.groundCheck = new CANNON.Body({
-            mass: 0.00001, // kg
-            position: new CANNON.Vec3(0, 0, 0), // m
-            shape: new CANNON.Cylinder(0.2, 0.2, 0.2),
-            material: new CANNON.Material(),
-            collisionFilterMask: 2
-
-
-        });
-        this.groundCheck.collisionResponse = 0;
         this.contactNormal = new CANNON.Vec3()
         this.upAxis = new CANNON.Vec3(0, 1, 0)
         this.body.addEventListener("collide", function (e) {
+
+            if (e.body.userData?.name == 'finish') {
+                syncWinnner(this);
+
+            }
             const contactNormal = e.contact.ni;
             const tolerance = 0.98;
             if (contactNormal.y > tolerance &&
@@ -107,16 +102,13 @@ export class Character {
 
         }.bind(this));
 
-
-        this.world.addBody(this.groundCheck);
         this.hasReleasedSpaceKey = true;
         this.ready = true;
         this.cssRenderer = this.createCSSRenderer()
         this.nameLabel = this.createLabel();
         setInterval(() => { syncPlayerInfo(this) }, 100)
-
         this.raycaster = new THREE.Raycaster();
-
+        this.maxDistance = 0;
 
     }
 
@@ -129,41 +121,30 @@ export class Character {
             const upVector = new THREE.Vector3(0, 1, 0);
             this.rightVector = new THREE.Vector3();
             this.rightVector.crossVectors(forwardVector, upVector);
-
             this.setForce(deltaTime);
             this.body.velocity = new CANNON.Vec3(forwardVector.x * this.force.z + this.rightVector.x * -this.force.x,
                 this.body.velocity.y,
                 cameraDirection.z * this.force.z + this.rightVector.z * -this.force.x)
 
             this.mesh.position.copy(new THREE.Vector3(this.body.position.x, this.body.position.y - 0.9, this.body.position.z));
-
             this.meshDirection.position.x = this.body.position.x + this.body.velocity.x
             this.meshDirection.position.z = this.body.position.z + this.body.velocity.z
             this.meshDirection.position.y = this.body.position.y
-
             this.controls.target.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y + 2, this.getPosition().z));
             this.controls.update();
             this.updateCamera();
-
-            this.groundCheck.position.copy(new THREE.Vector3(this.body.position.x, this.body.position.y - 0.89, this.body.position.z))
-
-
             this.updateStateMachine();
-
             this.mixer.update(deltaTime);
             this.nameLabel.position.set(this.getPosition().x, this.getPosition().y + 2, this.getPosition().z)
             this.cssRenderer.render(this.scene, this.camera);
-            if (this.body.position.y < -40) {
-                this.body.position = new CANNON.Vec3(0, 4, 0)
+            if (this.body.position.y < -45) {
                 this.body.velocity = new CANNON.Vec3(0, 0, 0)
+                this.body.position = this.getLastCheckPoint();
             }
-            if ((this.body.position.y.toFixed(9) === this.body.previousPosition.y.toFixed(9))) {
-                if (this.jumpAction.weightValue.value > 0) {
-                    this.jumpAction.weightValue.value = 0;
 
-                }
+            if (this.maxDistance < this.mesh.position.length()) {
+                this.maxDistance = this.mesh.position.length();
             }
-            console.log(this.runAction)
 
         }
 
@@ -243,7 +224,6 @@ export class Character {
                 }
             case this.states.Jumping:
                 {
-                    console.log('Fading action');
                     this.jumpAction.weightValue.value = 1;
                     this.jumpAction
                         .reset()
@@ -325,7 +305,7 @@ export class Character {
             this.canJump = false;
             this.body.velocity.y = 1.5
             setTimeout(function () {
-                this.body.applyForce(new CANNON.Vec3(0, 480, 0));
+                this.body.applyForce(new CANNON.Vec3(0, 500, 0));
             }.bind(this), 100)
             this.setState(this.states.Jumping)
         }
@@ -367,7 +347,21 @@ export class Character {
             action.fadeOut(0.1)
         });
     }
+    getLastCheckPoint() {
 
+        if (this.maxDistance < 96) {
+            return new CANNON.Vec3(0, 4, 0);
+
+        }
+
+
+        if (this.maxDistance < 146) {
+            return new CANNON.Vec3(34, 6, -90);
+        }
+
+        return new CANNON.Vec3(63.3, 2.8, -132.6);
+
+    }
     fadeAnimation(action) {
 
 
@@ -407,7 +401,6 @@ export class Character {
     }
     resize() {
         this.cssRenderer?.setSize(window.innerWidth, window.innerHeight);
-        console.log('Resizing')
     }
     createLabel() {
         const p = document.createElement('h5');
@@ -424,6 +417,11 @@ export class Character {
         const nameLabel = new CSS2DObject(p);
         this.scene.add(nameLabel)
         return nameLabel;
+    }
+    reset() {
+        this.maxDistance = 0;
+        this.body.position = this.getLastCheckPoint();
+
     }
 }
 

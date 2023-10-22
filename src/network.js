@@ -2,24 +2,27 @@ import { io } from "socket.io-client";
 import { characterSync } from "./characterSync";
 import { generateRandomRoomString } from './utility';
 import * as THREE from 'three'
+import { showWinner } from "./ui.controller";
 let socket = null;
 let players = new Map();
 let scene = null;
 let publicRoom = true;
 let roomName = 0;
+let character = null;
 let allPlayers = new Map();
 const URL = 'server-parkour.onrender.com' //https://server-parkour.onrender.com'https:///init
 fetch('https://' + URL + '/init').then((response) => response.json()).then(data => { console.log(data.status) })
 export function connectToServer(game) {
     scene = game.scene;
     publicRoom = game.publicRoom
-
+    character = game.character;
     document.querySelector('#messages').classList.remove('hide')
     fetch('https://' + URL + '/init').then((response) => response.json())
         .then(function (data) {
             if (data.status === 'active') {
                 socket = io(URL + '/parkourgame', { transports: ['websocket'] });
                 socket.on('connect', () => {
+
                     console.log('Connected as...', socket.id)
                     setInterval(showPlayerList, 500)
                     document.querySelector('#players').classList.remove('hide')
@@ -38,6 +41,10 @@ export function connectToServer(game) {
                     document.querySelector('#rooms').classList.remove('hide')
                     document.querySelector('#roomid').innerHTML = 'Room: ' + data.room
 
+                })
+                socket.on('playerWon', (playerInfo) => {
+                    showWinner(playerInfo.name)
+                    character?.reset();
                 })
             }
 
@@ -109,11 +116,17 @@ export function updateCharacters(deltaTime) {
 
 }
 
+export function syncWinnner(character) {
+    socket.emit('playerWon', { name: character.playerName })
+}
 
 function showPlayerList() {
     const playersList = Array.from(allPlayers);
     const point = new THREE.Vector3(0, 0, 0)
-    playersList.sort((x, y) => (x[1].getPosition().distanceTo(point)) < (y[1].getPosition().distanceTo(point)) ? 1 : -1)
+    if (playersList.length > 1) {
+        playersList.sort((x, y) => (x[1].getPosition().distanceTo(point))
+            < (y[1].getPosition().distanceTo(point)) ? 1 : -1)
+    }
     document.querySelector('#players-list').innerHTML =
         playersList.map(function (player, index) {
 
