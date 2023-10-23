@@ -10,14 +10,14 @@ let publicRoom = true;
 let roomName = 0;
 let character = null;
 let allPlayers = new Map();
-const URL = 'server-parkour.onrender.com' //https://server-parkour.onrender.com'https:///init
-fetch('https://' + URL + '/init').then((response) => response.json()).then(data => { console.log(data.status) })
+const URL = '35.171.153.38:3000' //https://server-parkour.onrender.com'https:///init
+fetch('http://' + URL + '/init').then((response) => response.json()).then(data => { console.log(data.status) })
 export function connectToServer(game) {
     scene = game.scene;
     publicRoom = game.publicRoom
     character = game.character;
     document.querySelector('#messages').classList.remove('hide')
-    fetch('https://' + URL + '/init').then((response) => response.json())
+    fetch('http://' + URL + '/init').then((response) => response.json())
         .then(function (data) {
             if (data.status === 'active') {
                 socket = io(URL + '/parkourgame', { transports: ['websocket'] });
