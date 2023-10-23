@@ -10,7 +10,7 @@ let publicRoom = true;
 let roomName = 0;
 let character = null;
 let allPlayers = new Map();
-const URL = 'server-parkour.onrender.com' //https://server-parkour.onrender.com'https:///init
+const URL = 'servers-sam.space' //https://server-parkour.onrender.com'https:///init
 fetch('https://' + URL + '/init').then((response) => response.json()).then(data => { console.log(data.status) })
 export function connectToServer(game) {
     scene = game.scene;
