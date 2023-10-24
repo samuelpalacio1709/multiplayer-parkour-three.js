@@ -10,7 +10,7 @@ let publicRoom = true;
 let roomName = 0;
 let character = null;
 let allPlayers = new Map();
-const URL = '44.203.72.141:3000' //https://server-parkour.onrender.com'https:///init
+const URL = 'server-parkour.onrender.com' //https://server-parkour.onrender.com'https:///init
 fetch('https://' + URL + '/init').then((response) => response.json()).then(data => { console.log(data.status) })
 export function connectToServer(game) {
     scene = game.scene;
@@ -20,7 +20,7 @@ export function connectToServer(game) {
     fetch('https://' + URL + '/init').then((response) => response.json())
         .then(function (data) {
             if (data.status === 'active') {
-                socket = io('44.203.72.141:3000' + '/parkourgame', { transports: ['websocket'] });
+                socket = io(URL + '/parkourgame', { transports: ['websocket'] });
                 socket.on('connect', () => {
 
                     console.log('Connected as...', socket.id)
