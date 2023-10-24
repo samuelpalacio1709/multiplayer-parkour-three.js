@@ -20,7 +20,7 @@ export function connectToServer(game) {
     fetch('https://' + URL + '/init').then((response) => response.json())
         .then(function (data) {
             if (data.status === 'active') {
-                socket = io(URL + '/parkourgame', { transports: ['websocket'] });
+                socket = io('ws://44.203.72.141:3000' + '/parkourgame', { transports: ['websocket'] });
                 socket.on('connect', () => {
 
                     console.log('Connected as...', socket.id)

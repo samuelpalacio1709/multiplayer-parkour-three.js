@@ -1,10 +1,6 @@
 import { defineConfig } from 'vite';
-
+import { createServer } from 'https';
+import { readFileSync } from 'fs';
 export default defineConfig({
-    // ...other configurations
 
-    build: {
-        // Enable Gzip compression for production builds
-        brotliSize: false, // Optional: Disable Brotli compression if you want
-    },
-});
+})
