@@ -124,8 +124,8 @@ function showPlayerList() {
     const playersList = Array.from(allPlayers);
     const point = new THREE.Vector3(0, 0, 0)
     if (playersList.length > 1) {
-        playersList.sort((x, y) => (x[1].getPosition().distanceTo(point))
-            < (y[1].getPosition().distanceTo(point)) ? 1 : -1)
+        playersList.sort((x, y) => (x[1].getPosition()?.distanceTo(point))
+            < (y[1].getPosition()?.distanceTo(point)) ? 1 : -1)
     }
     document.querySelector('#players-list').innerHTML =
         playersList.map(function (player, index) {
