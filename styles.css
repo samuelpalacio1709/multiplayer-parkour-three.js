@@ -322,3 +322,11 @@ input {
     padding: 20px;
     text-align: center;
 }
+
+.instructions {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 15%;
+    pointer-events: none;
+}

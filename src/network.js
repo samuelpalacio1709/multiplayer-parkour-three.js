@@ -33,19 +33,20 @@ export function connectToServer(game) {
                     socket.on('playerMove', (playerInfo) => {
                         syncCharacter(playerInfo)
                     })
-                })
-                socket.on('playerleft', (id) => {
-                    removePlayer(id);
-                })
-                socket.on('player-joined', data => {
-                    document.querySelector('#rooms').classList.remove('hide')
-                    document.querySelector('#roomid').innerHTML = 'Room: ' + data.room
+                    socket.on('playerleft', (id) => {
+                        removePlayer(id);
+                    })
+                    socket.on('player-joined', data => {
+                        document.querySelector('#rooms').classList.remove('hide')
+                        document.querySelector('#roomid').innerHTML = 'Room: ' + data.room
 
+                    })
+                    socket.on('playerWon', (playerInfo) => {
+                        showWinner(playerInfo.name)
+                        character?.reset();
+                    })
                 })
-                socket.on('playerWon', (playerInfo) => {
-                    showWinner(playerInfo.name)
-                    character?.reset();
-                })
+
             }
 
         })
@@ -117,7 +118,7 @@ export function updateCharacters(deltaTime) {
 }
 
 export function syncWinnner(character) {
-    socket.emit('playerWon', { name: character.playerName })
+    socket?.emit('playerWon', { name: character.playerName })
 }
 
 function showPlayerList() {
@@ -130,7 +131,7 @@ function showPlayerList() {
     document.querySelector('#players-list').innerHTML =
         playersList.map(function (player, index) {
 
-            if (player[0] === socket.id) {
+            if (player[0] === socket?.id) {
                 return `
                     <div class="player-info">
                         <span class='yellow'>${index + 1}</span>
