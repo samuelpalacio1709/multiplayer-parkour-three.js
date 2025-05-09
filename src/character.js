@@ -26,8 +26,6 @@ export class Character {
 
     async init() {
 
-
-
         this.characterType = getCharacter();
         let character = await this.loadCharacter();
         this.loadAnimations(character)
@@ -165,8 +163,6 @@ export class Character {
     }
 
     handleInputUp(event) {
-
-
         this.keySet.delete(event.key.toLowerCase())
         if (event.key === ' ') {
             this.hasReleasedSpaceKey = true;
@@ -285,14 +281,17 @@ export class Character {
     getPosition() {
         return this.mesh.position;
     }
+
     getRotation() {
         return this.mesh.quaternion;
     }
+
     updateCamera() {
 
         this.controls.maxDistance = 3.5;
         this.controls.minDistance = 3;
     }
+
     jump() {
         if (Math.abs(this.body.position.y - this.body.previousPosition.y) > 0.09) {
             return;
@@ -310,6 +309,7 @@ export class Character {
             this.setState(this.states.Jumping)
         }
     }
+
     async loadCharacter() {
         const mainGbl = await loadModel(this.characterType + '.glb')
         const walkAnimation = await loadModel('walking.glb')
@@ -325,6 +325,7 @@ export class Character {
         return character;
 
     }
+
     loadAnimations(model) {
         const animations = model.animations;
         this.mixer = new THREE.AnimationMixer(model);
@@ -347,6 +348,7 @@ export class Character {
             action.fadeOut(0.1)
         });
     }
+
     getLastCheckPoint() {
 
         if (this.maxDistance < 96) {
@@ -362,6 +364,7 @@ export class Character {
         return new CANNON.Vec3(63.3, 2.8, -132.6);
 
     }
+
     fadeAnimation(action) {
 
 
@@ -399,9 +402,11 @@ export class Character {
         document.body.appendChild(labelRender.domElement)
         return labelRender;
     }
+
     resize() {
         this.cssRenderer?.setSize(window.innerWidth, window.innerHeight);
     }
+
     createLabel() {
         const p = document.createElement('h5');
         const name = document.querySelector('#name').value;
@@ -418,6 +423,7 @@ export class Character {
         this.scene.add(nameLabel)
         return nameLabel;
     }
+
     reset() {
         this.maxDistance = 0;
         this.body.position = this.getLastCheckPoint();

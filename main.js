@@ -40,7 +40,7 @@ createLights(scene)
 
 // Cannon settings
 const world = new CANNON.World();
-world.gravity = new CANNON.Vec3(0, -20, 0)
+world.gravity = new CANNON.Vec3(0, -9.8, 0)
 const noBounceMaterial = new CANNON.Material();
 noBounceMaterial.restitution = 0;
 noBounceMaterial.friction = 0;
