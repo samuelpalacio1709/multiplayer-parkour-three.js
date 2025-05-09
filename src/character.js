@@ -36,7 +36,7 @@ export class Character {
         this.currentAction = null;
         this.setState(this.states.Idle);
         this.scene.add(this.mesh);
-        this.maxSpeed = 3;
+        this.maxSpeed = 2;
         this.force = new CANNON.Vec3(0, 0, 0)
 
         //Physics
@@ -61,15 +61,22 @@ export class Character {
 
         this.meshDirection = new THREE.Mesh(geometryDirection, materialDirection);
         this.scene.add(this.meshDirection)
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement)
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableZoom = false;
         this.controls.target.copy(this.getPosition());
         this.camera.position.set(this.getPosition().x,
-            this.getPosition().y - 0.2,
-            this.getPosition().z - 2.5);
+            this.getPosition().y + 1.5,
+            this.getPosition().z - 3);
 
+        // Basic camera settings
         this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.1;
+        this.controls.rotateSpeed = 0.5;
+        this.controls.minPolarAngle = Math.PI / 4;
+        this.controls.maxPolarAngle = Math.PI / 2;
         this.controls.enablePan = false;
+        this.controls.minDistance = 3;
+        this.controls.maxDistance = 3.5;
 
         this.rightVector = new THREE.Vector3(0, 0, 0);
 
@@ -113,41 +120,58 @@ export class Character {
 
     update(deltaTime) {
         if (this.ready) {
-
             const forwardVector = new THREE.Vector3();
             const cameraDirection = this.camera.getWorldDirection(forwardVector);
             const upVector = new THREE.Vector3(0, 1, 0);
             this.rightVector = new THREE.Vector3();
             this.rightVector.crossVectors(forwardVector, upVector);
             this.setForce(deltaTime);
-            this.body.velocity = new CANNON.Vec3(forwardVector.x * this.force.z + this.rightVector.x * -this.force.x,
+            
+            this.body.velocity.set(
+                forwardVector.x * this.force.z + this.rightVector.x * -this.force.x,
                 this.body.velocity.y,
-                cameraDirection.z * this.force.z + this.rightVector.z * -this.force.x)
+                cameraDirection.z * this.force.z + this.rightVector.z * -this.force.x
+            );
 
-            this.mesh.position.copy(new THREE.Vector3(this.body.position.x, this.body.position.y - 0.9, this.body.position.z));
-            this.meshDirection.position.x = this.body.position.x + this.body.velocity.x
-            this.meshDirection.position.z = this.body.position.z + this.body.velocity.z
-            this.meshDirection.position.y = this.body.position.y
-            this.controls.target.copy(new THREE.Vector3(this.getPosition().x, this.getPosition().y + 2, this.getPosition().z));
+            this.mesh.position.copy(new THREE.Vector3(
+                this.body.position.x,
+                this.body.position.y - 0.9,
+                this.body.position.z
+            ));
+
+            this.meshDirection.position.set(
+                this.body.position.x + this.body.velocity.x,
+                this.body.position.y,
+                this.body.position.z + this.body.velocity.z
+            );
+
+            // Improved camera target point
+            const targetPosition = new THREE.Vector3(
+                this.getPosition().x,
+                this.getPosition().y + 0.8, // Lower target point for better parkour visibility
+                this.getPosition().z
+            );
+            this.controls.target.lerp(targetPosition, 0.1);
             this.controls.update();
-            this.updateCamera();
+            
             this.updateStateMachine();
             this.mixer.update(deltaTime);
-            this.nameLabel.position.set(this.getPosition().x, this.getPosition().y + 2, this.getPosition().z)
+            this.nameLabel.position.set(
+                this.getPosition().x,
+                this.getPosition().y + 2,
+                this.getPosition().z
+            );
             this.cssRenderer.render(this.scene, this.camera);
+
             if (this.body.position.y < -45) {
-                this.body.velocity = new CANNON.Vec3(0, 0, 0)
-                this.body.position = this.getLastCheckPoint();
+                this.body.velocity.set(0, 0, 0);
+                this.body.position.copy(this.getLastCheckPoint());
             }
 
             if (this.maxDistance < this.mesh.position.length()) {
                 this.maxDistance = this.mesh.position.length();
             }
-
         }
-
-
-
     }
 
     handleInputDown(event) {
@@ -201,7 +225,6 @@ export class Character {
         switch (this.state) {
             case this.states.Idle:
                 {
-
                     this.fadeAnimation(this.idleAction)
                     break;
                 }
@@ -209,27 +232,27 @@ export class Character {
             case this.states.Walking:
                 {
                     this.fadeAnimation(this.walkAction)
-                    this.maxSpeed = 3;
+                    this.maxSpeed = 2;
                     break;
                 }
             case this.states.Running:
                 {
                     this.fadeAnimation(this.runAction)
-                    this.maxSpeed = 8;
+                    this.maxSpeed = 5;
                     break;
                 }
             case this.states.Jumping:
                 {
+                    // Immediate jump animation transition
                     this.jumpAction.weightValue.value = 1;
                     this.jumpAction
                         .reset()
                         .setEffectiveTimeScale(1)
                         .setEffectiveWeight(1)
-                        .fadeIn(0.3)
+                        .fadeIn(0.1) // Faster fade in
                         .play();
                     break;
                 }
-
         }
     }
     setState(state) {
@@ -287,9 +310,12 @@ export class Character {
     }
 
     updateCamera() {
-
+        // Adjust camera settings for better parkour visibility
         this.controls.maxDistance = 3.5;
         this.controls.minDistance = 3;
+        this.controls.minPolarAngle = Math.PI / 3; // Allow looking more upward
+        this.controls.maxPolarAngle = Math.PI / 2.2; // Limit looking down slightly
+        this.controls.update();
     }
 
     jump() {
@@ -297,16 +323,9 @@ export class Character {
             return;
         }
         if (this.canJump && this.hasReleasedSpaceKey) {
-
-            // this.jumpAction.setEffectiveTimeScale(1.3);
-            // this.jumpAction.reset();
-            // this.jumpAction.repetitions = 1;
             this.canJump = false;
-            this.body.velocity.y = 1.5
-            setTimeout(function () {
-                this.body.applyForce(new CANNON.Vec3(0, 500, 0));
-            }.bind(this), 100)
-            this.setState(this.states.Jumping)
+            this.body.velocity.y =7;
+            this.setState(this.states.Jumping);
         }
     }
 
@@ -366,18 +385,16 @@ export class Character {
     }
 
     fadeAnimation(action) {
-
-
         if (!this.currentAction) {
             action.fadeIn(0.3)
             this.currentAction = action;
             action.weightValue.value = 1;
-
             return;
         }
 
         if (this.currentAction != action) {
-            this.currentAction.fadeOut(0.3)
+            // Faster fade out for smoother transitions
+            this.currentAction.fadeOut(0.1)
             action.weightValue.value = 1;
             this.currentAction.weightValue.value = 0;
 
@@ -385,12 +402,10 @@ export class Character {
                 .reset()
                 .setEffectiveTimeScale(1)
                 .setEffectiveWeight(1)
-                .fadeIn(0.3)
+                .fadeIn(0.1) // Faster fade in
                 .play();
         }
         this.currentAction = action
-
-
     }
 
     createCSSRenderer() {
